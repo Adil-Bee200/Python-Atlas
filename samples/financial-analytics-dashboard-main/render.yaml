@@ -1,0 +1,26 @@
+# Render Blueprint: https://render.com/docs/blueprint-spec
+# Deploy from repo root; creates one FastAPI web service.
+
+services:
+  - type: web
+    name: stock-forcast-api
+    runtime: python
+    region: ohio
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements-api.txt && alembic upgrade head
+    startCommand: gunicorn app.main:app -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT
+    healthCheckPath: /health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DB_AUTO_CREATE
+        value: "false"
+      - key: DATABASE_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: MARKET_DATA_API_KEY
+        sync: false
+      - key: INTRADAY_CACHE_TTL_SECONDS
+        value: "300"
