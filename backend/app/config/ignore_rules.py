@@ -5,7 +5,10 @@ DEFAULT_IGNORED_DIRS = {
     "__pycache__",
     "node_modules",
     "migrations",
+    "alembic",
     ".pytest_cache",
     ".mypy_cache",
     ".ruff_cache",
+    "alembic",
+    "migrations",
 }
