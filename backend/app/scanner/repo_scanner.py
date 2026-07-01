@@ -10,19 +10,9 @@ The second step is to parse the Python files and return a list of Python modules
 import os
 from pathlib import Path
 from backend.app.config.ignore_rules import DEFAULT_IGNORED_DIRS, DEFAULT_IGNORED_PATHS
-from dataclasses import dataclass
 import sys
 
-
-@dataclass(frozen=True)
-class PythonModule:
-    path: Path
-    module_path: str # e.g. "backend.app.scanner.repo_scanner" 
-
-@dataclass
-class ScanResult:
-    repo_root: Path
-    modules: list[PythonModule]
+from backend.app.models.scan_models import PythonModule, ScanResult
 
 
 def verify_repo_path(repo_path: Path) -> bool:
