@@ -12,3 +12,7 @@ DEFAULT_IGNORED_DIRS = {
     "alembic",
     "migrations",
 }
+
+DEFAULT_IGNORED_PATHS = {
+    "alembic/versions",
+}

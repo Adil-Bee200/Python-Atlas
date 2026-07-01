@@ -9,7 +9,7 @@ The second step is to parse the Python files and return a list of Python modules
 
 import os
 from pathlib import Path
-from backend.app.config.ignore_rules import DEFAULT_IGNORED_DIRS
+from backend.app.config.ignore_rules import DEFAULT_IGNORED_DIRS, DEFAULT_IGNORED_PATHS
 from dataclasses import dataclass
 import sys
 
@@ -41,21 +41,39 @@ def convert_to_module_path(relative_path: Path) -> str:
 
     return ".".join(module_parts)
 
+def is_ignored_path(relative_path: Path) -> bool:
+    posix = relative_path.as_posix()
+    return any(
+        posix == ignored or posix.startswith(f"{ignored}/")
+        for ignored in DEFAULT_IGNORED_PATHS
+    )
+
 def scan_repo(repo_path: Path) -> ScanResult:
     modules_found = []
 
     for dirpath, dirnames, filenames in os.walk(repo_path):
-        dirnames[:] = [d for d in dirnames if d not in DEFAULT_IGNORED_DIRS]
+        current_rel = Path(dirpath).relative_to(repo_path)
+
+        if is_ignored_path(current_rel):
+            dirnames.clear()
+            continue
+
+        dirnames[:] = [
+            d for d in dirnames
+            if d not in DEFAULT_IGNORED_DIRS and not is_ignored_path(current_rel / d)
+        ]
 
         for filename in filenames:
             if not filename.endswith(".py"):
-                # skip non-Python files
                 continue
 
             full_path = Path(dirpath) / filename
             relative_path = full_path.relative_to(repo_path)
-            module_path = convert_to_module_path(relative_path)
 
+            if is_ignored_path(relative_path):
+                continue
+
+            module_path = convert_to_module_path(relative_path)
             modules_found.append(PythonModule(path=relative_path, module_path=module_path))
 
     return ScanResult(repo_root=repo_path, modules=modules_found)
