@@ -11,3 +11,8 @@ class ParsedModule:
     path: Path # e.g. "backend/app/scanner/repo_scanner.py"
     module_path: str # e.g. "backend.app.scanner.repo_scanner"
     imports: tuple[ParsedImport, ...]
+
+@dataclass(frozen=True)
+class ParsedResult:
+    repo_root: Path
+    modules: tuple[ParsedModule, ...]
