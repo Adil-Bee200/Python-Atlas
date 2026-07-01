@@ -1,19 +1,36 @@
 from pathlib import Path
 import pytest
+from backend.app.config.ignore_rules import DEFAULT_IGNORED_DIRS
 from backend.app.scanner.repo_scanner import scan_repo, PythonModule, ScanResult
 
 @pytest.fixture
 def create_test_repo(tmp_path: Path) -> Path:
     """Create a test repository with sample Python files."""
     repo_path = tmp_path / "test_repo"
+
+    # create the repo directory and the app directory
     repo_path.mkdir()
-    (repo_path / "__init__.py").touch()
+    (repo_path / "app").mkdir()
+    (repo_path / "app" / ".venv").mkdir()
+    (repo_path / "app" / "__pycache__").mkdir()
+    (repo_path / "venv").mkdir()
+    (repo_path / "migrations").mkdir()
+    (repo_path / ".git").mkdir()
+
+
+
+    # create the sample files
     (repo_path / "module1.py").write_text("print('Hello, World!')")
     (repo_path / "module2.py").write_text("print('Hello, World!')")
-    (repo_path / "app").mkdir()
     (repo_path / "app" / "main.py").write_text("print('Hello, World!')")
+
+    # create files that should be ignored
+    (repo_path / "__init__.py").touch()
     (repo_path / "app" / "__init__.py").touch()
     (repo_path / "README.md").write_text("# docs")
+    (repo_path / "migrations" / "randomFile.py").touch()
+    (repo_path / ".gitignore").write_text("*.pyc")
+
     return repo_path
 
 
@@ -38,3 +55,43 @@ def test_scan_repo_finds_python_files(create_test_repo: Path):
         "app",
         ""
     }
+
+
+
+def test_scan_repo_ignores_ignored_dirs(create_test_repo: Path):
+    result = scan_repo(create_test_repo)
+
+    paths = {module.path for module in result.modules}
+    module_paths = {module.module_path for module in result.modules}
+
+    assert Path("app/.venv") not in paths
+    assert Path("app/__pycache__") not in paths
+    assert Path("README.md") not in paths
+    assert Path("migrations/randomFile.py") not in paths
+    assert Path(".gitignore") not in paths
+    assert Path(".git") not in paths
+    
+    assert "app._venv" not in module_paths
+    assert "app.__pycache__" not in module_paths
+    assert "README" not in module_paths
+    assert "migrations.randomFile" not in module_paths
+    assert ".gitignore" not in module_paths
+    assert ".git" not in module_paths
+
+def test_scan_repo_ignores_ignored_paths(create_test_repo: Path, monkeypatch):
+    alembic_dir = create_test_repo / "alembic"
+    versions_dir = alembic_dir / "versions"
+    versions_dir.mkdir(parents=True, exist_ok=True)
+    (alembic_dir / "env.py").write_text("print('env')")
+    (versions_dir / "001_initial.py").write_text("print('migration')")
+
+    monkeypatch.setattr(
+        "backend.app.scanner.repo_scanner.DEFAULT_IGNORED_DIRS",
+        DEFAULT_IGNORED_DIRS - {"alembic"},
+    )
+
+    result = scan_repo(create_test_repo)
+    paths = {module.path for module in result.modules}
+
+    assert Path("alembic/env.py") in paths
+    assert Path("alembic/versions/001_initial.py") not in paths
