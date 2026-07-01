@@ -66,7 +66,7 @@ def scan_repo(repo_path: Path) -> ScanResult:
             module_path = convert_to_module_path(relative_path)
             modules_found.append(PythonModule(path=relative_path, module_path=module_path))
 
-    return ScanResult(repo_root=repo_path, modules=modules_found)
+    return ScanResult(repo_root=repo_path, modules=tuple(modules_found)) # convert to tuple to make it immutable
 
 
 if __name__ == "__main__":

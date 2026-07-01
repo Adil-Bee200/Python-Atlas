@@ -7,7 +7,7 @@ class PythonModule:
     path: Path
     module_path: str # e.g. "backend.app.scanner.repo_scanner" 
 
-@dataclass
+@dataclass(frozen=True)
 class ScanResult:
     repo_root: Path
-    modules: list[PythonModule]
+    modules: tuple[PythonModule, ...]
