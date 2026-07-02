@@ -35,6 +35,17 @@ def parse_module(repo_root: Path, module: PythonModule) -> ParsedModule:
 
     source = full_path.read_text(encoding="utf-8")
 
+    try:
+        tree = ast.parse(source)
+    except Exception as e:
+        print(f"Error parsing module {module.path}: {e}")
+        return ParsedModule(
+            path=module.path,
+            module_path=module.module_path,
+            imports=tuple(),
+            error=str(e),
+        )
+
     tree = ast.parse(source)
 
     visitor = ImportVisitor()
