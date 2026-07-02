@@ -63,8 +63,8 @@ def scan_repo(repo_path: Path) -> ScanResult:
             if is_ignored_path(relative_path):
                 continue
 
-            module_path = convert_to_module_path(relative_path)
-            modules_found.append(PythonModule(path=relative_path, module_path=module_path))
+            dotted_path = convert_to_module_path(relative_path)
+            modules_found.append(PythonModule(path=relative_path, module_path=dotted_path))
 
     return ScanResult(repo_root=repo_path, modules=tuple(modules_found)) # convert to tuple to make it immutable
 

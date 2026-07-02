@@ -1,6 +1,6 @@
 from pathlib import Path
 from backend.app.models.import_models import ParsedModule, ParsedImport, ParsedResult
-from backend.app.models.scan_models import ScanResult
+from backend.app.models.scan_models import ScanResult, PythonModule
 import ast 
 
 class ImportVisitor(ast.NodeVisitor):
@@ -29,14 +29,25 @@ class ImportVisitor(ast.NodeVisitor):
 
 
 
-def parse_module(module_path: Path) -> ParsedModule:
-    # TODO: Reads one module and returns a ParsedModule object
+def parse_module(repo_root: Path, module: PythonModule) -> ParsedModule:
+    full_path = repo_root / module.path
 
-    return parse_module(module_path)
+    source = full_path.read_text(encoding="utf-8")
+
+    tree = ast.parse(source)
+
+    visitor = ImportVisitor()
+    visitor.visit(tree)
+
+    return ParsedModule(
+        path=module.path,
+        module_path=module.module_path,
+        imports=tuple(visitor.imports),
+    )
 
 def parse_all_modules(scan_result: ScanResult) -> ParsedResult:
-    # TODO: Reads all modules in the scan result and returns a ParsedResult object
-
-
-
-    return ParsedResult(repo_root= scan_result.repo_root, modules= tuple())
+    modules = tuple(
+        parse_module(scan_result.repo_root, module)
+        for module in scan_result.modules
+    )
+    return ParsedResult(repo_root=scan_result.repo_root, modules=modules)
