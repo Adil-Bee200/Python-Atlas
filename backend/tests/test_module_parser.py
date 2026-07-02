@@ -46,3 +46,5 @@ def main():
         "pathlib",
         "app.models",
     }
+
+    assert len(parsed.imports) == 4

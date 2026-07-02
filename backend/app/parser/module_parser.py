@@ -17,15 +17,16 @@ class ImportVisitor(ast.NodeVisitor):
             )
     
     def visit_ImportFrom(self, node: ast.ImportFrom):
-        for alias in node.names:
-            module_name = node.module or ""
-            imported_names = ", ".join(alias.name for alias in node.names)
-            self.imports.append(
-                ParsedImport(
-                    raw_import=f"from {module_name} import {imported_names}",
-                    module_name=module_name,
-                )
+        # One `from X import ...` statement should produce one ParsedImport per module,
+        # regardless of how many names are imported from that module.
+        module_name = node.module or ""
+        imported_names = ", ".join(alias.name for alias in node.names)
+        self.imports.append(
+            ParsedImport(
+                raw_import=f"from {module_name} import {imported_names}",
+                module_name=module_name,
             )
+        )
 
 
 
