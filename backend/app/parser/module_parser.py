@@ -38,12 +38,11 @@ def parse_module(repo_root: Path, module: PythonModule) -> ParsedModule:
     try:
         tree = ast.parse(source)
     except Exception as e:
-        print(f"Error parsing module {module.path}: {e}")
         return ParsedModule(
             path=module.path,
             module_path=module.module_path,
             imports=tuple(),
-            error=str(e),
+            error=e,
         )
 
     tree = ast.parse(source)

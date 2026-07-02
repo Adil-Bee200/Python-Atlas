@@ -11,7 +11,7 @@ class ParsedModule:
     path: Path # e.g. "backend/app/scanner/repo_scanner.py"
     module_path: str # e.g. "backend.app.scanner.repo_scanner"
     imports: tuple[ParsedImport, ...]
-    error: Optional[str] = None
+    error: Optional[Exception] = None
 
 @dataclass(frozen=True)
 class ParsedResult:

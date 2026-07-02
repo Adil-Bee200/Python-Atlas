@@ -1,6 +1,6 @@
 from pathlib import Path
-from backend.app.parser.module_parser import parse_module
-from backend.app.models.scan_models import PythonModule
+from backend.app.parser.module_parser import parse_module, parse_all_modules
+from backend.app.models.scan_models import PythonModule, ScanResult
 
 def test_parse_module_extracts_top_level_imports(tmp_path):
     ## test: a module that imports only at the top-level
@@ -97,6 +97,7 @@ def submodule_function():
         "app.other_module.main",
     }
 
+    assert parsed.error is None
     assert len(parsed.imports) == 6
 
 
@@ -153,4 +154,120 @@ def main():
         "logging",
     }
 
+    assert parsed.error is None
     assert len(parsed.imports) == 5
+
+def test_parse_module_empty_module(tmp_path):
+    ## test: an empty module
+    app_dir = tmp_path / "app"
+    app_dir.mkdir()
+
+    file_path = app_dir / "main.py"
+    file_path.write_text("")
+
+    module = PythonModule(
+        path = Path("app/main.py"),
+        module_path = "app.main",
+    )
+
+    parsed = parse_module(tmp_path, module)
+
+    assert parsed.path == Path("app/main.py")
+    assert parsed.module_path == "app.main"
+    assert parsed.error is None
+
+    assert len(parsed.imports) == 0
+
+def test_parse_module_invalid_syntax(tmp_path):
+    ## test: an invalid syntax module
+    app_dir = tmp_path / "app"
+    app_dir.mkdir()
+
+    file_path = app_dir / "main.py"
+    file_path.write_text("""
+    import sys 
+    print( # invalid syntax
+    """)
+
+    module = PythonModule(
+        path = Path("app/main.py"),
+        module_path = "app.main",
+    )
+
+    parsed = parse_module(tmp_path, module)
+
+    assert parsed.path == Path("app/main.py")
+    assert parsed.module_path == "app.main"
+    assert parsed.error is not None
+    assert isinstance(parsed.error, SyntaxError)
+
+
+def test_parse_module_no_imports(tmp_path):
+    ## test: a module that has no imports
+    app_dir = tmp_path / "app"
+    app_dir.mkdir()
+
+    file_path = app_dir / "main.py"
+    file_path.write_text("""
+def main():
+    print("Hello, World!")
+
+def other_function():
+    x = 1
+    y = 2
+    return x + y
+
+def other_function_2():
+    other_function()
+    """)
+
+    module = PythonModule(
+        path = Path("app/main.py"),
+        module_path = "app.main",
+    )
+
+    parsed = parse_module(tmp_path, module)
+
+    assert parsed.path == Path("app/main.py")
+    assert parsed.module_path == "app.main"
+    assert parsed.error is None
+    assert len(parsed.imports) == 0
+
+
+def test_parse_all_modules_parses_scan_result(tmp_path):
+    app_dir = tmp_path / "app"
+    app_dir.mkdir()
+
+    (app_dir / "main.py").write_text("import os\nfrom app.config import settings\n")
+    (app_dir / "config.py").write_text("from pathlib import Path\n")
+    (app_dir / "broken.py").write_text("import sys\nprint(\n")
+
+    scan_result = ScanResult(
+        repo_root=tmp_path,
+        modules=(
+            PythonModule(path=Path("app/main.py"), module_path="app.main"),
+            PythonModule(path=Path("app/config.py"), module_path="app.config"),
+            PythonModule(path=Path("app/broken.py"), module_path="app.broken"),
+        ),
+    )
+
+    parsed_result = parse_all_modules(scan_result)
+
+    assert parsed_result.repo_root == tmp_path
+    assert len(parsed_result.modules) == 3
+
+    parsed_by_path = {module.path: module for module in parsed_result.modules}
+
+    main = parsed_by_path[Path("app/main.py")]
+    config = parsed_by_path[Path("app/config.py")]
+    broken = parsed_by_path[Path("app/broken.py")]
+
+    assert main.error is None
+    assert {imp.module_name for imp in main.imports} == {"os", "app.config"}
+
+    assert config.error is None
+    assert {imp.module_name for imp in config.imports} == {"pathlib"}
+
+    assert broken.error is not None
+    assert broken.imports == ()
+
