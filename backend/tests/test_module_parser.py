@@ -271,3 +271,50 @@ def test_parse_all_modules_parses_scan_result(tmp_path):
     assert broken.error is not None
     assert broken.imports == ()
 
+
+def test_parse_module_ignores_future_import_only(tmp_path):
+    app_dir = tmp_path / "app"
+    app_dir.mkdir()
+
+    (app_dir / "main.py").write_text("from __future__ import annotations\n")
+
+    module = PythonModule(path=Path("app/main.py"), module_path="app.main")
+    parsed = parse_module(tmp_path, module)
+
+    assert parsed.error is None
+    assert parsed.imports == ()
+
+
+def test_parse_module_ignores_future_import_with_regular_imports(tmp_path):
+    app_dir = tmp_path / "app"
+    app_dir.mkdir()
+
+    (app_dir / "main.py").write_text(
+        "from __future__ import annotations\n"
+        "import os\n"
+        "from pathlib import Path\n"
+    )
+
+    module = PythonModule(path=Path("app/main.py"), module_path="app.main")
+    parsed = parse_module(tmp_path, module)
+
+    assert parsed.error is None
+    assert {imp.module_name for imp in parsed.imports} == {"os", "pathlib"}
+    assert len(parsed.imports) == 2
+
+
+def test_parse_module_ignores_multiple_future_import_names(tmp_path):
+    app_dir = tmp_path / "app"
+    app_dir.mkdir()
+
+    (app_dir / "main.py").write_text(
+        "from __future__ import annotations, print_function\n"
+        "import sys\n"
+    )
+
+    module = PythonModule(path=Path("app/main.py"), module_path="app.main")
+    parsed = parse_module(tmp_path, module)
+
+    assert parsed.error is None
+    assert {imp.module_name for imp in parsed.imports} == {"sys"}
+    assert len(parsed.imports) == 1

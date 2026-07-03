@@ -20,6 +20,9 @@ class ImportVisitor(ast.NodeVisitor):
         # One `from X import ...` statement should produce one ParsedImport per module,
         # regardless of how many names are imported from that module.
         module_name = node.module or ""
+        if module_name == "__future__":
+            return
+
         imported_names = ", ".join(alias.name for alias in node.names)
         self.imports.append(
             ParsedImport(
