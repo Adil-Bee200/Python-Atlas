@@ -318,3 +318,58 @@ def test_parse_module_ignores_multiple_future_import_names(tmp_path):
     assert parsed.error is None
     assert {imp.module_name for imp in parsed.imports} == {"sys"}
     assert len(parsed.imports) == 1
+
+def test_parse_multiple_imports_same_line(tmp_path):
+    app_dir = tmp_path / "app"
+    app_dir.mkdir()
+
+    (app_dir / "main.py").write_text("""
+from app.models import User, Post
+from app.config import settings
+import logging, pydantic, sys, pytest
+import app.submodule.submodule_function as submodule_function
+""")
+
+    module = PythonModule(path=Path("app/main.py"), module_path="app.main")
+    parsed = parse_module(tmp_path, module)
+    imports = {imp.module_name for imp in parsed.imports}
+
+    assert parsed.error is None
+    assert imports == {
+        "app.models",
+        "app.config",
+        "logging",
+        "pydantic",
+        "sys",
+        "pytest",
+        "app.submodule.submodule_function",
+    }
+    assert len(parsed.imports) == 7
+
+def test_parse_raw_import_is_preserved(tmp_path):
+    app_dir = tmp_path / "app"
+    app_dir.mkdir()
+
+    (app_dir / "main.py").write_text("""
+from app.models import User, Post
+from app.config import settings
+import logging, pydantic, sys, pytest
+import app.submodule.submodule_function as submodule_function
+""")
+
+    module = PythonModule(path=Path("app/main.py"), module_path="app.main")
+    parsed = parse_module(tmp_path, module)
+    raw_imports = {imp.raw_import for imp in parsed.imports}
+
+    assert parsed.error is None
+
+    assert raw_imports == {
+        "from app.models import User, Post",
+        "from app.config import settings",
+        "import logging",
+        "import pydantic",
+        "import sys",
+        "import pytest",
+        "import app.submodule.submodule_function",
+    }
+    assert len(parsed.imports) == 7
