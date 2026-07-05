@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from backend.app.models.graph_models import Graph, GraphNode, GraphEdge
 from backend.app.models.import_models import ParsedResult
 
@@ -27,7 +29,7 @@ def build_graph(parsed_result: ParsedResult) -> Graph:
     fan_in = {}
     fan_out = {}
 
-    for source, target in edges:
+    for source, target, _raw_import in edges: # _raw_import is not used 
         fan_in[target] = fan_in.get(target, 0) + 1
         fan_out[source] = fan_out.get(source, 0) + 1 
     
@@ -46,6 +48,7 @@ def build_graph(parsed_result: ParsedResult) -> Graph:
     # 6. Create graph
     graph = Graph(parsed_result.repo_root, GraphNodes, GraphEdges, tuple(unresolved_imports), tuple(errors))
 
+    return graph
     """ 
     Notes:
     - We create a lookup of all parsed local modules without errors
