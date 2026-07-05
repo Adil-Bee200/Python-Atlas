@@ -5,8 +5,8 @@ from dataclasses import dataclass
 class GraphNode:
     module_path: str
     path: Path 
-    fan_in: int
-    fan_out: int 
+    fan_in: int # the number of unique local modules that depend on this module
+    fan_out: int # the number of unique local modules this module depends on
 
 @dataclass(frozen=True)
 class GraphEdge:
@@ -19,4 +19,5 @@ class Graph:
     repo_root: Path
     nodes: tuple[GraphNode, ...]
     edges: tuple[GraphEdge, ...]
-    external_imports: tuple[str, ...]
+    unresolved_imports: tuple[str, ...] # at this stage theres no way to know if its a bad import or a external import
+    errors: tuple[str, ...]
