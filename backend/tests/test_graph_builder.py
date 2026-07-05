@@ -24,3 +24,15 @@ def test_graph_builder_basic():
     assert graph.edges == tuple()
     assert graph.unresolved_imports == tuple()
     assert graph.errors == tuple()
+
+""" 
+Notes:
+Testing scenarios (check for accurate fan_in and fan_out in all cases):
+- No imports + multiple modules
+- No imports + single module
+- Simple 2 modules + 1 import
+- Multiple imports but only 1 module (should go to unresolved imports)
+- Mix of local and external imports
+- Only errors (should go to errors)
+- Mix of local and external imports + errors
+"""
