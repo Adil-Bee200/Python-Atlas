@@ -25,13 +25,14 @@ def build_graph(parsed_result: ParsedResult) -> Graph:
             else:
                 edges.add((module.module_path, import_entry.module_name, import_entry.raw_import))
     
-    # 3. Compute fan_in and fan_out
+    # 3. Compute fan_in and fan_out from unique local module dependencies
     fan_in = {}
     fan_out = {}
 
-    for source, target, _raw_import in edges: # _raw_import is not used 
+    unique_deps = {(source, target) for source, target, _raw_import in edges}
+    for source, target in unique_deps:
         fan_in[target] = fan_in.get(target, 0) + 1
-        fan_out[source] = fan_out.get(source, 0) + 1 
+        fan_out[source] = fan_out.get(source, 0) + 1
     
     # 4. Create nodes
     GraphNodes = tuple(
@@ -52,10 +53,10 @@ def build_graph(parsed_result: ParsedResult) -> Graph:
     """ 
     Notes:
     - We create a lookup of all parsed local modules without errors
-    - Build edge set (will deduplicate imports for a given module) of all imports across all parsed modules
+    - Build edge set of all imports across all parsed modules (dedupes identical import statements)
     - Only add edges to edge set if the target module exists in the lookup (resolved imports)
     - Add unresolved imports to set of unresolved imports
-    - Iterate over edge set and compute fan_in and fan_out for each module
+    - Compute fan_in and fan_out from unique (source, target) local module pairs
     - Create a GraphNode object for each module
     - Create a GraphEdge object for each edge
     - Create a Graph object with the nodes and edges
