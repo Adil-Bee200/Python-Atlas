@@ -13,7 +13,8 @@ class GraphNode:
 class GraphEdge:
     source: str
     target: str
-    raw_import: str
+    import_count: int
+    raw_imports: tuple[str, ...]
 
 @dataclass(frozen=True)
 class Graph:

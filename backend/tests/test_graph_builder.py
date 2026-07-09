@@ -95,10 +95,55 @@ def test_graph_builder_simple_2_modules_1_import():
         GraphNode("module2", Path("test_repo/module2.py"), 0, 1),
     }
     assert set(graph.edges) == {
-        GraphEdge("module2", "module1", "from module1 import variable1"),
+        GraphEdge("module2", "module1", 1, ("from module1 import variable1",)),
     }
     assert set(graph.unresolved_imports) == set()
     assert set(graph.errors) == set()
+
+
+def test_graph_builder_counts_unique_local_module_dependencies():
+    parsed_result = ParsedResult(
+        repo_root=Path("test_repo"),
+        modules=(
+            ParsedModule(
+                path=Path("test_repo/module1.py"),
+                module_path="module1",
+                imports=tuple(),
+                error=None,
+            ),
+            ParsedModule(
+                path=Path("test_repo/module2.py"),
+                module_path="module2",
+                imports=(
+                    ParsedImport(
+                        raw_import="from module1 import foo",
+                        module_name="module1",
+                    ),
+                    ParsedImport(
+                        raw_import="from module1 import bar",
+                        module_name="module1",
+                    ),
+                ),
+                error=None,
+            ),
+        ),
+    )
+
+    graph = build_graph(parsed_result)
+
+    assert set(graph.nodes) == {
+        GraphNode("module1", Path("test_repo/module1.py"), 1, 0),
+        GraphNode("module2", Path("test_repo/module2.py"), 0, 1),
+    }
+    assert set(graph.edges) == {
+        GraphEdge(
+            "module2",
+            "module1",
+            2,
+            ("from module1 import bar", "from module1 import foo"),
+        ),
+    }
+
 
 def test_graph_builder_import_at_different_levels():
     parsed_result = ParsedResult(
@@ -144,8 +189,18 @@ def test_graph_builder_import_at_different_levels():
         GraphNode("app.models.model", Path("test_repo/app/models/model.py"), 1, 0),
     }
     assert set(graph.edges) == {
-        GraphEdge("config.config", "app.models.model", "from app.models.model import Model"),
-        GraphEdge("module1", "config.config", "from config.config import CONFIG"),
+        GraphEdge(
+            "config.config",
+            "app.models.model",
+            1,
+            ("from app.models.model import Model",),
+        ),
+        GraphEdge(
+            "module1",
+            "config.config",
+            1,
+            ("from config.config import CONFIG",),
+        ),
     }
     assert set(graph.unresolved_imports) == set()
     assert set(graph.errors) == set()
