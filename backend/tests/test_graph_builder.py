@@ -205,12 +205,59 @@ def test_graph_builder_import_at_different_levels():
     assert set(graph.unresolved_imports) == set()
     assert set(graph.errors) == set()
 
+
+def test_graph_builder_unresolved_imports_simple():
+    parsed_result = ParsedResult(
+        repo_root=Path("test_repo"),
+        modules=(
+            ParsedModule(
+                path=Path("test_repo/module1.py"),
+                module_path="module1",
+                imports=(
+                    ParsedImport(
+                        raw_import="from module2 import variable1",
+                        module_name="module2"
+                    ),
+                    ParsedImport(
+                        raw_import="from matplotlib.pyplot import plt",
+                        module_name="matplotlib.pyplot"
+                    ),
+                    ParsedImport(
+                        raw_import="from FastAPI import Server",
+                        module_name="FastAPI"
+                    ),
+                    ParsedImport(
+                        raw_import="from numpy import array",
+                        module_name="numpy"
+                    ),
+                ),
+                error=None,
+            ),
+        ),
+    )
+
+    graph = build_graph(parsed_result)
+    assert isinstance(graph, Graph)
+    assert graph.repo_root == Path("test_repo")
+    assert set(graph.nodes) == {
+        GraphNode("module1", Path("test_repo/module1.py"), 0, 0),
+    }
+    assert set(graph.edges) == set()
+    assert set(graph.unresolved_imports) == {
+        "from module2 import variable1",
+        "from matplotlib.pyplot import plt",
+        "from FastAPI import Server",
+        "from numpy import array",
+    }
+    assert set(graph.errors) == set()
+    
+
 """ 
 Notes:
 Testing scenarios (check for accurate fan_in and fan_out in all cases):
 - No imports + multiple modules DONE
 - No imports + single module DONE
-- Simple 2 modules + 1 import
+- Simple 2 modules + 1 import DONE
 - Multiple imports but only 1 module (should go to unresolved imports)
 - Mix of local and external imports
 - Only errors (should go to errors)
