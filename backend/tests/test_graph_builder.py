@@ -251,15 +251,208 @@ def test_graph_builder_unresolved_imports_simple():
     }
     assert set(graph.errors) == set()
     
+def test_graph_builder_mix_of_local_and_external_imports():
+    parsed_result = ParsedResult(
+        repo_root=Path("test_repo"),
+        modules=(
+            ParsedModule(
+                path=Path("test_repo/module1.py"),
+                module_path="module1",
+                imports=(
+                    ParsedImport(
+                        raw_import="from FastAPI import app",
+                        module_name="FastAPI"
+                    ),
+                    ParsedImport(
+                        raw_import="from numpy import array",
+                        module_name="numpy"
+                    ),
+                ),
+                error=None,
+            ),
+            ParsedModule(
+                path=Path("test_repo/module2.py"),
+                module_path="module2",
+                imports=(
+                    ParsedImport(
+                        raw_import="from module1 import variable1",
+                        module_name="module1"
+                    ),
+                    ParsedImport(
+                        raw_import="from numpy import array",
+                        module_name="numpy"
+                    ),
+                ),
+                error=None,
+            ),
+            ParsedModule(
+                path=Path("test_repo/app/models/model.py"),
+                module_path="app.models.model",
+                imports=(
+                    ParsedImport(
+                        raw_import="from module1 import variable20",
+                        module_name="module1"
+                    ),
+                ),
+                error=None,
+            ),
+        ),
+    )
 
-""" 
-Notes:
-Testing scenarios (check for accurate fan_in and fan_out in all cases):
-- No imports + multiple modules DONE
-- No imports + single module DONE
-- Simple 2 modules + 1 import DONE
-- Multiple imports but only 1 module (should go to unresolved imports)
-- Mix of local and external imports
-- Only errors (should go to errors)
-- Mix of local and external imports + errors
-"""
+    graph = build_graph(parsed_result)
+    assert isinstance(graph, Graph)
+    assert graph.repo_root == Path("test_repo")
+    assert set(graph.nodes) == {
+        GraphNode("module1", Path("test_repo/module1.py"), 2, 0),
+        GraphNode("module2", Path("test_repo/module2.py"), 0, 1),
+        GraphNode("app.models.model", Path("test_repo/app/models/model.py"), 0, 1),
+    }
+    assert set(graph.edges) == {
+        GraphEdge("module2", "module1", 1, ("from module1 import variable1",)),
+        GraphEdge("app.models.model", "module1", 1, ("from module1 import variable20",)),
+    }
+    assert set(graph.unresolved_imports) == {
+        "from FastAPI import app",
+        "from numpy import array",
+    }
+    assert set(graph.errors) == set()
+
+def test_graph_builder_only_errors():
+    parsed_result = ParsedResult(
+        repo_root=Path("test_repo"),
+        modules=(
+            ParsedModule(
+                path=Path("test_repo/module1.py"),
+                module_path="module1",
+                imports=tuple(),
+                error=Exception("Error in module1"),
+            ),
+            ParsedModule(
+                path=Path("test_repo/app/models/model.py"),
+                module_path="app.models.model",
+                imports=tuple(),
+                error=Exception("Error in app.models.model"),
+            ),
+            ParsedModule(
+                path=Path("test_repo/config/config.py"),
+                module_path="config.config",
+                imports=tuple(),
+                error=Exception("Error in config.config"),
+            ),
+        ),
+    )
+    graph = build_graph(parsed_result)
+    assert isinstance(graph, Graph)
+    assert graph.repo_root == Path("test_repo")
+    assert set(graph.nodes) == set()
+    assert set(graph.edges) == set()
+    assert set(graph.unresolved_imports) == set()
+    assert set(graph.errors) == {"module1", "app.models.model", "config.config"}
+
+def test_graph_builder_mix_of_local_and_external_imports_and_errors():
+    parsed_result = ParsedResult(
+        repo_root=Path("test_repo"),
+        modules=(
+            ParsedModule(
+                path=Path("test_repo/module1.py"),
+                module_path="module1",
+                imports=tuple(),
+                error=Exception("Error in module1"),
+            ),
+            ParsedModule(
+                path=Path("test_repo/module2.py"),
+                module_path="module2",
+                imports=(
+                    ParsedImport(
+                        raw_import="from module1 import variable1",
+                        module_name="module1"
+                    ),
+                    ParsedImport(
+                        raw_import="from numpy import array",
+                        module_name="numpy"
+                    ),
+                    ParsedImport(
+                        raw_import="from app.models.model import Model",
+                        module_name="app.models.model"
+                    ),
+                ),
+                error=None,
+            ),
+            ParsedModule(
+                path=Path("test_repo/app/models/model.py"),
+                module_path="app.models.model",
+                imports=(
+                    ParsedImport(
+                        raw_import="from module2 import variable20",
+                        module_name="module2"
+                    ),
+                ),
+                error=None,
+            ),
+            ParsedModule(
+                path=Path("test_repo/config/config.py"),
+                module_path="config.config",
+                imports=(
+                    ParsedImport(
+                        raw_import="from module2 import variable20",
+                        module_name="module2"
+                    ),
+                    ParsedImport(
+                        raw_import="from FastAPI import app",
+                        module_name="FastAPI"
+                    ),
+                ),
+                error=None,
+            ),
+            ParsedModule(
+                path=Path("test_repo/module3.py"),
+                module_path="module3",
+                imports=tuple(),
+                error=Exception("Error in module3"),
+            ),
+            ParsedModule(
+                path=Path("test_repo/app/api/users.py"),
+                module_path="app.api.users",
+                imports=(
+                    ParsedImport(
+                        raw_import="from app.models.model import Model1",
+                        module_name="app.models.model"
+                    ),
+                    ParsedImport(
+                        raw_import="from app.models.model import Model2",
+                        module_name="app.models.model"
+                    ),
+                    ParsedImport(
+                        raw_import="from module3 import variable30",
+                        module_name="module3"
+                    ),
+                ),
+                error=None,
+            ),
+        ),
+    )
+    graph = build_graph(parsed_result)
+    assert isinstance(graph, Graph)
+    assert graph.repo_root == Path("test_repo")
+    assert set(graph.nodes) == {
+        GraphNode("module2", Path("test_repo/module2.py"), 2, 1),
+        GraphNode("app.models.model", Path("test_repo/app/models/model.py"), 2, 1),
+        GraphNode("config.config", Path("test_repo/config/config.py"), 0, 1),
+        GraphNode("app.api.users", Path("test_repo/app/api/users.py"), 0, 1),
+    }
+    assert set(graph.edges) == {
+        GraphEdge("module2", "app.models.model", 1, ("from app.models.model import Model",)),
+        GraphEdge("app.models.model", "module2", 1, ("from module2 import variable20",)),
+        GraphEdge("config.config", "module2", 1, ("from module2 import variable20",)),
+        GraphEdge("app.api.users", "app.models.model", 2, ("from app.models.model import Model1", "from app.models.model import Model2",)),
+    }
+    assert set(graph.unresolved_imports) == {
+        "from module1 import variable1",
+        "from numpy import array",
+        "from FastAPI import app",
+        "from module3 import variable30",
+    }
+    assert set(graph.errors) == {
+        "module1",
+        "module3",
+    }
