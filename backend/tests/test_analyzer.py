@@ -31,8 +31,6 @@ def test_analyze_repo_valid_path(tmp_path: Path):
 
 # Tests for basic functionality
 '''
-- Only errors (should go to errors)
-- Imports to files with errors 
 - Only ignored files 
 '''
 
@@ -208,3 +206,52 @@ def test_function(x, """)
         "module3",
         "module4",
     }
+
+def test_analyze_repo_files_from_ignored_dirs(tmp_path: Path):
+    repo_path = tmp_path / "test_repo"
+    repo_path.mkdir()
+    (repo_path / "module2.py").write_text("variable1 = 1")
+    (repo_path / "venv").mkdir()
+    (repo_path / "venv" / "__init__.py").write_text(
+"""from module2 import variable1
+from FastAPI import FastAPI
+from pydantic import BaseModel
+from typing import List
+from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool""")
+    (repo_path / ".venv").mkdir()
+    (repo_path / ".venv" / "randomFile.py").write_text(
+"""from module2 import variable1
+from FastAPI import FastAPI
+from pydantic import BaseModel
+from typing import List
+from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool""")
+    (repo_path / "alembic").mkdir()
+    (repo_path / "alembic" / "versions").mkdir()
+    (repo_path / "alembic" / "versions" / "1234567890.py").write_text(
+"""from module2 import variable1
+from FastAPI import FastAPI
+from pydantic import BaseModel
+from typing import List
+from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool""")
+    graph = analyze_repo(repo_path)
+    assert isinstance(graph, Graph)
+    assert graph.repo_root == repo_path
+    assert len(graph.nodes) == 1
+    assert len(graph.edges) == 0
+    assert len(graph.unresolved_imports) == 0
+    assert len(graph.errors) == 0
+    assert set(graph.nodes) == {
+        GraphNode("module2", Path("module2.py"), 0, 0),
+    }
+    assert set(graph.edges) == set()
+    assert set(graph.unresolved_imports) == set()
+    assert set(graph.errors) == set()
