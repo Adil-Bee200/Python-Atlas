@@ -28,12 +28,6 @@ def test_analyze_repo_valid_path(tmp_path: Path):
     assert set(graph.unresolved_imports) == set()
     assert set(graph.errors) == set()
 
-
-# Tests for basic functionality
-'''
-- Only ignored files 
-'''
-
 def test_analyze_repo_basic_2_modules_1_import(tmp_path: Path):
     repo_path = tmp_path / "test_repo"
     repo_path.mkdir()
@@ -255,3 +249,73 @@ from sqlalchemy.pool import StaticPool""")
     assert set(graph.edges) == set()
     assert set(graph.unresolved_imports) == set()
     assert set(graph.errors) == set()
+
+
+def test_analyze_repo_complex_test_repo(tmp_path: Path):
+    repo_path = tmp_path / "test_repo"
+    repo_path.mkdir()
+    (repo_path / "app").mkdir()
+    (repo_path / "module1.py").write_text(   # buggy file
+"""from module2 import variable1
+from FastAPI import FastAPI
+from pydantic import BaseModel
+from typing import List
+from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
+
+variable1 = 1
+
+print(hello""")
+    (repo_path / "app" / "module2.py").write_text(   # file imports from buggy file
+"""from module1 import variable1
+from FastAPI import FastAPI
+from pydantic import BaseModel
+from typing import List
+
+variable2 = 2
+variable3 = 3
+
+def test_function(x, y):
+    return x + y""")
+    (repo_path / "module3.py").write_text(   # file imports from normal file but duplicates import
+"""from app.module2 import variable2
+from app.module2 import variable3
+from app.module2 import variable4
+
+print(variable3)""")
+    (repo_path / "app" / "module4.py").write_text(   # file imports from file with errors and normal file
+"""from app.module2 import variable1
+from module1 import variable1
+from FastAPI import FastAPI
+from pydantic import BaseModel
+
+def test_function(x, y):
+    return x + y""")
+    graph = analyze_repo(repo_path)
+    assert isinstance(graph, Graph)
+    assert graph.repo_root == repo_path
+    assert len(graph.nodes) == 3
+    assert len(graph.edges) == 2
+    assert len(graph.unresolved_imports) == 4
+    assert len(graph.errors) == 1
+
+    assert set(graph.nodes) == {
+        GraphNode("app.module2", Path("app/module2.py"), 2, 0),
+        GraphNode("module3", Path("module3.py"), 0, 1),
+        GraphNode("app.module4", Path("app/module4.py"), 0, 1),
+    }
+    assert set(graph.edges) == {
+        GraphEdge("module3", "app.module2", 3, ("from app.module2 import variable2", "from app.module2 import variable3", "from app.module2 import variable4",)),
+        GraphEdge("app.module4", "app.module2", 1, ("from app.module2 import variable1",)),
+    }
+    assert set(graph.unresolved_imports) == {
+        "from module1 import variable1",
+        "from FastAPI import FastAPI",
+        "from pydantic import BaseModel",
+        "from typing import List",
+    }
+    assert set(graph.errors) == {
+        "module1",
+    }
