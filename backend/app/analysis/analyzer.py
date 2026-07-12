@@ -9,6 +9,8 @@ from backend.app.export.graph_json import print_graph_as_json_string
 from backend.app.metrics.centrality import analyze_centrality
 from backend.app.metrics.isolates import analyze_isolates
 from backend.app.metrics.cycles import analyze_cycles
+from dataclasses import replace
+from backend.app.metrics.metrics_aggregator import analyze_metrics
 
 def analyze_repo(repo_path: Path) -> Graph:
     repo_path = Path(repo_path).expanduser().resolve()
@@ -21,6 +23,8 @@ def analyze_repo(repo_path: Path) -> Graph:
     scan_result = scan_repo(repo_path)
     parsed_result = parse_all_modules(scan_result)
     graph = build_graph(parsed_result)
+    metrics = analyze_metrics(graph)
+    graph = replace(graph, metrics=metrics)
     return graph
 
 
@@ -71,11 +75,14 @@ if __name__ == "__main__":
 
         # print_graph_as_json_string(graph)
         
-        # centrality_metrics = analyze_centrality(graph)
-        #print(centrality_metrics)
+        centrality_metrics = analyze_centrality(graph)
+        print(centrality_metrics)
 
-        # isolates_metrics = analyze_isolates(graph)
-        # print(isolates_metrics)
+        isolates_metrics = analyze_isolates(graph)
+        print(isolates_metrics)
 
         cycles_metrics = analyze_cycles(graph)
         print(cycles_metrics)
+
+        metrics = analyze_metrics(graph)
+        print(metrics)

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
+from backend.app.models.graph_metrics_models import GraphMetrics
 
 
 @dataclass(frozen=True)
@@ -23,3 +24,4 @@ class Graph:
     edges: tuple[GraphEdge, ...]
     unresolved_imports: tuple[str, ...] # at this stage theres no way to know if its a bad import or a external import
     errors: tuple[str, ...]
+    metrics: GraphMetrics | None = None
