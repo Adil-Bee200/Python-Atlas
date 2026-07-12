@@ -456,3 +456,89 @@ def test_graph_builder_mix_of_local_and_external_imports_and_errors():
         "module1",
         "module3",
     }
+
+
+def test_graph_builder_resolves_imports_under_nested_package_root():
+    parsed_result = ParsedResult(
+        repo_root=Path("repo"),
+        modules=(
+            ParsedModule(
+                path=Path("backend/app/main.py"),
+                module_path="backend.app.main",
+                imports=(
+                    ParsedImport(
+                        raw_import="from app.core.config import settings",
+                        module_name="app.core.config",
+                    ),
+                    ParsedImport(
+                        raw_import="from fastapi import FastAPI",
+                        module_name="fastapi",
+                    ),
+                ),
+                error=None,
+            ),
+            ParsedModule(
+                path=Path("backend/app/core/config.py"),
+                module_path="backend.app.core.config",
+                imports=tuple(),
+                error=None,
+            ),
+            ParsedModule(
+                path=Path("backend/app/core/__init__.py"),
+                module_path="backend.app.core",
+                imports=tuple(),
+                error=None,
+            ),
+        ),
+    )
+
+    graph = build_graph(parsed_result)
+    assert set(graph.edges) == {
+        GraphEdge(
+            "backend.app.main",
+            "backend.app.core.config",
+            1,
+            ("from app.core.config import settings",),
+        ),
+    }
+    assert set(graph.unresolved_imports) == {"from fastapi import FastAPI"}
+    assert {node.module_path: (node.fan_in, node.fan_out) for node in graph.nodes} == {
+        "backend.app.main": (0, 1),
+        "backend.app.core.config": (1, 0),
+        "backend.app.core": (0, 0),
+    }
+
+
+def test_graph_builder_ambiguous_suffix_stays_unresolved():
+    parsed_result = ParsedResult(
+        repo_root=Path("repo"),
+        modules=(
+            ParsedModule(
+                path=Path("backend/app/main.py"),
+                module_path="backend.app.main",
+                imports=(
+                    ParsedImport(
+                        raw_import="from app.config import settings",
+                        module_name="app.config",
+                    ),
+                ),
+                error=None,
+            ),
+            ParsedModule(
+                path=Path("backend/app/config.py"),
+                module_path="backend.app.config",
+                imports=tuple(),
+                error=None,
+            ),
+            ParsedModule(
+                path=Path("services/app/config.py"),
+                module_path="services.app.config",
+                imports=tuple(),
+                error=None,
+            ),
+        ),
+    )
+
+    graph = build_graph(parsed_result)
+    assert graph.edges == ()
+    assert set(graph.unresolved_imports) == {"from app.config import settings"}
