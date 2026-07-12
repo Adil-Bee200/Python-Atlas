@@ -6,6 +6,7 @@ from backend.app.graph.graph_builder import build_graph
 from backend.app.models.graph_models import Graph
 import sys
 from backend.app.export.graph_json import print_graph_as_json_string
+from backend.app.metrics.centrality import analyze_centrality
 
 def analyze_repo(repo_path: Path) -> Graph:
     repo_path = Path(repo_path).expanduser().resolve()
@@ -67,3 +68,5 @@ if __name__ == "__main__":
             sys.exit(1)
 
         print_graph_as_json_string(graph)
+        metrics = analyze_centrality(graph)
+        print(metrics)
