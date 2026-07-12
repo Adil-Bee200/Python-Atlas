@@ -5,6 +5,8 @@ from backend.app.parser.module_parser import parse_all_modules
 from backend.app.graph.graph_builder import build_graph
 from backend.app.models.graph_models import Graph
 import sys
+from dataclasses import asdict
+import json
 
 def analyze_repo(repo_path: Path) -> Graph:
     repo_path = Path(repo_path).expanduser().resolve()
@@ -41,6 +43,34 @@ def print_graph_summary(graph: Graph):
     for edge in graph.edges:
         print(f"{edge.source} -> {edge.target} ({edge.import_count})")
 
+    print(f"Unresolved imports: ")
+    for import_str in graph.unresolved_imports:
+        print(f"{import_str}")
+    
+    print(f"Errors: ")
+    for error in graph.errors:
+        print(f"{error}")
+
+def path_to_str_factory(data):
+    return {k: str(v) if isinstance(v, Path) else v for k, v in data}
+
+def graph_to_dict(graph: Graph) -> dict:
+    return {
+        "repo_root" : str(graph.repo_root),
+        "nodes" : [asdict(node, dict_factory=path_to_str_factory) for node in graph.nodes],
+        "edges" : [asdict(edge) for edge in graph.edges],
+        "unresolved_imports" : list(graph.unresolved_imports),
+        "errors" : list(graph.errors),
+    }
+
+def print_graph_to_json(graph: Graph) -> str:
+    print(json.dumps(graph_to_dict(graph), indent=4))
+
+def write_json_to_file(graph: Graph, file_path: Path) -> str:
+    with open(file_path, "w") as f:
+        json.dump(graph_to_dict(graph), f, indent=4)
+    print(f"Graph written to {file_path}")
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("No path provided")
@@ -57,4 +87,5 @@ if __name__ == "__main__":
             print(f"Error: {e}")
             sys.exit(1)
 
-        print_graph_summary(graph)
+        print_graph_to_json(graph)
+        write_json_to_file(graph, "graph.json")
