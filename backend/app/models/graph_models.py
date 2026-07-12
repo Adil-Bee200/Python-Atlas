@@ -23,10 +23,3 @@ class Graph:
     edges: tuple[GraphEdge, ...]
     unresolved_imports: tuple[str, ...] # at this stage theres no way to know if its a bad import or a external import
     errors: tuple[str, ...]
-
-@dataclass(frozen=True)
-class GraphMetrics:
-    in_degree_centrality: dict[str, float]
-    out_degree_centrality: dict[str, float]
-    betweenness_centrality: dict[str, float]
-    pagerank_centrality: dict[str, float]
