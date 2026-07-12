@@ -4,38 +4,8 @@ import pytest
 
 from backend.app.metrics.isolates import analyze_isolates
 from backend.app.models.graph_metrics_models import GraphIsolatesMetrics
-from backend.app.models.graph_models import Graph, GraphEdge, GraphNode
-
-
-def _node(module_path: str, fan_in: int = 0, fan_out: int = 0) -> GraphNode:
-    return GraphNode(
-        module_path=module_path,
-        path=Path(f"{module_path.replace('.', '/')}.py"),
-        fan_in=fan_in,
-        fan_out=fan_out,
-    )
-
-
-def _edge(source: str, target: str, import_count: int = 1) -> GraphEdge:
-    return GraphEdge(
-        source=source,
-        target=target,
-        import_count=import_count,
-        raw_imports=(f"from {target} import x",) * import_count,
-    )
-
-
-def _graph(
-    module_paths: tuple[str, ...],
-    edges: tuple[tuple[str, str], ...] = (),
-) -> Graph:
-    return Graph(
-        repo_root=Path("test_repo"),
-        nodes=tuple(_node(path) for path in module_paths),
-        edges=tuple(_edge(source, target) for source, target in edges),
-        unresolved_imports=(),
-        errors=(),
-    )
+from backend.tests.utils import _graph, _node, _edge
+from backend.app.models.graph_models import Graph
 
 
 def test_analyze_isolates_empty_graph():
