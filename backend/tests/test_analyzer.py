@@ -319,3 +319,34 @@ def test_function(x, y):
     assert set(graph.errors) == {
         "module1",
     }
+
+
+def test_analyze_repo_nested_package_root_layout(tmp_path: Path):
+    repo_path = tmp_path / "dashboard"
+    package = repo_path / "backend" / "app"
+    (package / "core").mkdir(parents=True)
+    (package / "__init__.py").write_text("")
+    (package / "core" / "__init__.py").write_text("")
+    (package / "core" / "config.py").write_text("settings = {}\n")
+    (package / "main.py").write_text(
+        "from fastapi import FastAPI\n"
+        "from app.core.config import settings\n"
+        "app = FastAPI()\n"
+    )
+
+    graph = analyze_repo(repo_path)
+
+    assert len(graph.edges) == 1
+    assert set(graph.edges) == {
+        GraphEdge(
+            "backend.app.main",
+            "backend.app.core.config",
+            1,
+            ("from app.core.config import settings",),
+        ),
+    }
+    assert set(graph.unresolved_imports) == {"from fastapi import FastAPI"}
+    main_node = next(n for n in graph.nodes if n.module_path == "backend.app.main")
+    config_node = next(n for n in graph.nodes if n.module_path == "backend.app.core.config")
+    assert main_node.fan_out == 1
+    assert config_node.fan_in == 1
