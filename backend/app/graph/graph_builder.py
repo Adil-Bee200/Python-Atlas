@@ -3,6 +3,28 @@ from pathlib import Path
 from backend.app.models.graph_models import Graph, GraphNode, GraphEdge
 from backend.app.models.import_models import ParsedResult
 
+
+def _resolve_local_module(
+    import_name: str,
+    module_lookup: dict[str, Path],
+) -> str | None:
+    if not import_name:
+        return None
+
+    if import_name in module_lookup:
+        return import_name
+
+    suffix = f".{import_name}"
+    matches = [
+        module_path
+        for module_path in module_lookup
+        if module_path.endswith(suffix)
+    ]
+    if len(matches) == 1:
+        return matches[0]
+    return None
+
+
 def build_graph(parsed_result: ParsedResult) -> Graph:
     # 1. Create a lookup table for the modules
     module_lookup = {
@@ -20,10 +42,11 @@ def build_graph(parsed_result: ParsedResult) -> Graph:
             errors.add(module.module_path)
             continue
         for import_entry in module.imports:
-            if import_entry.module_name not in module_lookup:
+            resolved = _resolve_local_module(import_entry.module_name, module_lookup)
+            if resolved is None:
                 unresolved_imports.add(import_entry.raw_import)
             else:
-                edge_key = (module.module_path, import_entry.module_name)
+                edge_key = (module.module_path, resolved)
                 edge_imports.setdefault(edge_key, set()).add(import_entry.raw_import)
 
     # 3. Compute fan_in and fan_out from unique local module dependencies
