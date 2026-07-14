@@ -156,3 +156,12 @@ def test_analyze_cycles_ignores_unresolved_imports_and_errors_fields():
 
     assert metrics.cycles == (("a", "b"),)
 
+def test_analyze_cycles_ignores_modules_outside_the_cycle():
+    metrics = analyze_cycles(
+        _graph(
+            ("a", "b", "orphan", "leaf"),
+            edges=(("a", "b"), ("b", "a"), ("leaf", "a")),
+        )
+    )
+
+    assert metrics.cycles == (("a", "b"),)
