@@ -23,9 +23,15 @@ def _graph(
     module_paths: tuple[str, ...],
     edges: tuple[tuple[str, str], ...] = (),
 ) -> Graph:
+    fan_in = {path: 0 for path in module_paths}
+    fan_out = {path: 0 for path in module_paths}
+    for source, target in edges:
+        fan_out[source] += 1
+        fan_in[target] += 1
+
     return Graph(
         repo_root=Path("test_repo"),
-        nodes=tuple(_node(path) for path in module_paths),
+        nodes=tuple(_node(path, fan_in[path], fan_out[path]) for path in module_paths),
         edges=tuple(_edge(source, target) for source, target in edges),
         unresolved_imports=(),
         errors=(),
