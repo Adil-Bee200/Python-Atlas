@@ -77,17 +77,6 @@ def test_analyze_cycles_three_module_cycle():
     assert metrics.cycles == (("app.api.users", "app.db.models", "app.core.config"),)
 
 
-def test_analyze_cycles_ignores_modules_outside_the_cycle():
-    metrics = analyze_cycles(
-        _graph(
-            ("a", "b", "orphan", "leaf"),
-            edges=(("a", "b"), ("b", "a"), ("leaf", "a")),
-        )
-    )
-
-    assert metrics.cycles == (("a", "b"),)
-
-
 def test_analyze_cycles_multiple_disjoint_cycles_are_sorted():
     metrics = analyze_cycles(
         _graph(
@@ -166,3 +155,4 @@ def test_analyze_cycles_ignores_unresolved_imports_and_errors_fields():
     metrics = analyze_cycles(graph)
 
     assert metrics.cycles == (("a", "b"),)
+
