@@ -1,6 +1,16 @@
 from dataclasses import dataclass
 
 @dataclass(frozen=True)
+class GraphDeadModules:
+    module: str
+    reason: str
+
+@dataclass(frozen=True)
+class GraphDeadModulesMetrics:
+    dead_modules: tuple[GraphDeadModules, ...]
+    dead_modules_percentage: float
+
+@dataclass(frozen=True)
 class GraphHubModule:
     module: str
     in_degree: int
