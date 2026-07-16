@@ -11,3 +11,27 @@ ignore:
     - .ruff_cache
     - .mypy_cache
     - .venv
+
+architecture:
+  layers:
+    api:
+      patterns:
+        - app.api.*
+      may_depend_on:
+        - services
+
+    services:
+      patterns:
+        - app.services.*
+      may_depend_on:
+        - repositories
+
+    repositories:
+      patterns:
+        - app.repositories.*
+      may_depend_on:
+        - models
+
+    models:
+      patterns:
+        - app.models.*
