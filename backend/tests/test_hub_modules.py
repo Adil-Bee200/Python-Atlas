@@ -141,3 +141,15 @@ def test_analyze_metrics_includes_hub_modules():
     metrics = analyze_metrics(graph)
 
     assert metrics.hub_modules.hub_modules[0].module == "hub"
+    assert metrics.dead_modules is None
+
+
+def test_analyze_metrics_includes_dead_modules_when_entry_points_given():
+    graph = _graph(
+        ("main", "util", "orphan"),
+        edges=(("main", "util"),),
+    )
+    metrics = analyze_metrics(graph, entry_points=("main",))
+
+    assert metrics.dead_modules is not None
+    assert {d.module for d in metrics.dead_modules.dead_modules} == {"orphan"}

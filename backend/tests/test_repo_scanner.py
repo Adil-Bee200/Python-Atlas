@@ -1,7 +1,10 @@
 from pathlib import Path
+
 import pytest
-from backend.app.config.ignore_rules import DEFAULT_IGNORED_DIRS
-from backend.app.scanner.repo_scanner import scan_repo, PythonModule, ScanResult
+
+from backend.app.config.defaults import DEFAULT_CONFIGURATION, DEFAULT_IGNORED_DIRS
+from backend.app.config.models import IgnoreConfig
+from backend.app.scanner.repo_scanner import scan_repo
 
 @pytest.fixture
 def create_test_repo(tmp_path: Path) -> Path:
@@ -78,20 +81,35 @@ def test_scan_repo_ignores_ignored_dirs(create_test_repo: Path):
     assert ".gitignore" not in module_paths
     assert ".git" not in module_paths
 
-def test_scan_repo_ignores_ignored_paths(create_test_repo: Path, monkeypatch):
+def test_scan_repo_ignores_ignored_paths(create_test_repo: Path):
     alembic_dir = create_test_repo / "alembic"
     versions_dir = alembic_dir / "versions"
     versions_dir.mkdir(parents=True, exist_ok=True)
     (alembic_dir / "env.py").write_text("print('env')")
     (versions_dir / "001_initial.py").write_text("print('migration')")
 
-    monkeypatch.setattr(
-        "backend.app.scanner.repo_scanner.DEFAULT_IGNORED_DIRS",
-        DEFAULT_IGNORED_DIRS - {"alembic"},
+    # Allow scanning alembic/ itself while still ignoring alembic/versions.
+    ignore = IgnoreConfig(
+        directories=tuple(sorted(DEFAULT_IGNORED_DIRS - {"alembic"})),
+        modules=DEFAULT_CONFIGURATION.ignore.modules,
+        paths=DEFAULT_CONFIGURATION.ignore.paths,
     )
-
-    result = scan_repo(create_test_repo)
+    result = scan_repo(create_test_repo, ignore=ignore)
     paths = {module.path for module in result.modules}
 
     assert Path("alembic/env.py") in paths
     assert Path("alembic/versions/001_initial.py") not in paths
+
+
+def test_scan_repo_ignores_module_patterns(create_test_repo: Path):
+    tests_dir = create_test_repo / "tests"
+    tests_dir.mkdir()
+    (tests_dir / "__init__.py").write_text("")
+    (tests_dir / "test_app.py").write_text("assert True\n")
+
+    result = scan_repo(create_test_repo)
+    module_paths = {module.module_path for module in result.modules}
+
+    assert "tests" not in module_paths
+    assert "tests.test_app" not in module_paths
+    assert "app.main" in module_paths
