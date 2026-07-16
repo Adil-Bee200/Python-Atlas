@@ -1,4 +1,4 @@
-from backend.app.config.models import Configuration, IgnoreConfig
+from backend.app.config.models import ArchitectureConfig, Configuration, IgnoreConfig
 
 DEFAULT_IGNORED_DIRS = frozenset(
     {
@@ -30,6 +30,9 @@ DEFAULT_IGNORED_MODULES = frozenset(
 
 DEFAULT_CONFIGURATION = Configuration(
     entry_points=(),
+    architecture=ArchitectureConfig(
+        layers=(),
+    ),
     ignore=IgnoreConfig(
         directories=tuple(sorted(DEFAULT_IGNORED_DIRS)),
         modules=tuple(sorted(DEFAULT_IGNORED_MODULES)),

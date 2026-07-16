@@ -7,7 +7,12 @@ from typing import Any
 import yaml
 
 from backend.app.config.defaults import DEFAULT_CONFIGURATION
-from backend.app.config.models import Configuration, IgnoreConfig
+from backend.app.config.models import (
+    ArchitectureConfig,
+    ArchitectureLayer,
+    Configuration,
+    IgnoreConfig,
+)
 
 
 @dataclass(frozen=True)
@@ -15,6 +20,7 @@ class ConfigOverrides:
     """Optional CLI overrides. ``None`` means “leave YAML/defaults as-is”."""
 
     entry_points: tuple[str, ...] | None = None
+    architecture: ArchitectureConfig | None = None
     ignore_directories: tuple[str, ...] | None = None
     ignore_modules: tuple[str, ...] | None = None
     ignore_paths: tuple[str, ...] | None = None
@@ -57,6 +63,58 @@ def _parse_entry_points(raw: Any) -> tuple[str, ...]:
     )
 
 
+def _parse_architecture_layer(name: str, raw: Any) -> ArchitectureLayer:
+    if not isinstance(raw, dict):
+        raise ValueError(
+            f"Config field 'architecture.layers.{name}' must be a mapping"
+        )
+
+    unknown = set(raw) - {"patterns", "may_depend_on"}
+    if unknown:
+        raise ValueError(
+            f"Unknown architecture.layers.{name} keys: "
+            f"{', '.join(sorted(unknown))}"
+        )
+
+    return ArchitectureLayer(
+        name=name,
+        module_patterns=_as_str_tuple(
+            raw.get("patterns"), f"architecture.layers.{name}.patterns"
+        ),
+        allowed_dependencies=_as_str_tuple(
+            raw.get("may_depend_on"),
+            f"architecture.layers.{name}.may_depend_on",
+        ),
+    )
+
+
+def _parse_architecture(raw: Any) -> ArchitectureConfig:
+    if raw is None:
+        return DEFAULT_CONFIGURATION.architecture
+    if not isinstance(raw, dict):
+        raise ValueError("Config field 'architecture' must be a mapping")
+
+    unknown = set(raw) - {"layers"}
+    if unknown:
+        raise ValueError(
+            f"Unknown architecture keys: {', '.join(sorted(unknown))}"
+        )
+
+    layers_raw = raw.get("layers")
+    if layers_raw is None:
+        return ArchitectureConfig()
+    if not isinstance(layers_raw, dict):
+        raise ValueError("Config field 'architecture.layers' must be a mapping")
+
+    layers: list[ArchitectureLayer] = []
+    for name, layer_raw in layers_raw.items():
+        if not isinstance(name, str):
+            raise ValueError("Architecture layer names must be strings")
+        layers.append(_parse_architecture_layer(name, layer_raw))
+
+    return ArchitectureConfig(layers=tuple(layers))
+
+
 def _merge_ignore(user_ignore: Any) -> IgnoreConfig:
     defaults = DEFAULT_CONFIGURATION.ignore
     if user_ignore is None:
@@ -89,13 +147,14 @@ def _build_configuration(raw: Any) -> Configuration:
     if not isinstance(raw, dict):
         raise ValueError("Config root must be a mapping")
 
-    unknown = set(raw) - {"entry_points", "ignore"}
+    unknown = set(raw) - {"entry_points", "ignore", "architecture"}
     if unknown:
         raise ValueError(f"Unknown config keys: {', '.join(sorted(unknown))}")
 
     return Configuration(
         entry_points=_parse_entry_points(raw.get("entry_points")),
         ignore=_merge_ignore(raw.get("ignore")),
+        architecture=_parse_architecture(raw.get("architecture")),
     )
 
 
@@ -131,11 +190,17 @@ def apply_overrides(
         if overrides.ignore_paths is not None
         else config.ignore.paths
     )
+    architecture = (
+        overrides.architecture
+        if overrides.architecture is not None
+        else config.architecture
+    )
 
     return replace(
         config,
         entry_points=entry_points,
         ignore=IgnoreConfig(directories=directories, modules=modules, paths=paths),
+        architecture=architecture,
     )
 
 
