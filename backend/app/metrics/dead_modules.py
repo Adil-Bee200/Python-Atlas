@@ -4,6 +4,7 @@ import networkx as nx
 from backend.app.metrics.utils import convert_graph_to_networkx_graph
 
 def analyze_dead_modules(graph: Graph, entry_points: tuple[str, ...]) -> GraphDeadModulesMetrics:
+    # REQUIRES: entry_points is not empty
     G = convert_graph_to_networkx_graph(graph)
     unreached_modules = set(G.nodes)
     unreached_modules -= set(entry_points) ## Remove entry points from unreached modules

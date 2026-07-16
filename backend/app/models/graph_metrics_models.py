@@ -45,3 +45,4 @@ class GraphMetrics:
     isolates: GraphIsolatesMetrics
     cycles: GraphCyclesMetrics
     hub_modules: GraphHubModulesMetrics
+    dead_modules: GraphDeadModulesMetrics | None = None # for now 
