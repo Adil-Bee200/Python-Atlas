@@ -392,3 +392,49 @@ def test_analyze_repo_from_package_import_reaches_submodules(tmp_path: Path):
     dead = {d.module for d in graph.metrics.dead_modules.dead_modules}
     assert "backend.app.api.routes.alerts" not in dead
     assert "backend.app.api.routes.summary" not in dead
+
+
+def test_analyze_repo_relative_imports_create_edges_and_reachability(tmp_path: Path):
+    repo_path = tmp_path / "dashboard"
+    api = repo_path / "app" / "api"
+    routes = api / "routes"
+    core = repo_path / "app" / "core"
+    routes.mkdir(parents=True)
+    core.mkdir(parents=True)
+
+    (repo_path / "app" / "__init__.py").write_text("")
+    (api / "__init__.py").write_text("from .router import api_router\n")
+    (api / "router.py").write_text(
+        "from .routes import alerts, summary\n"
+        "from ..core.config import settings\n"
+    )
+    (api / "deps.py").write_text("x = 1\n")
+    (routes / "__init__.py").write_text("")
+    (routes / "alerts.py").write_text("router = object()\n")
+    (routes / "summary.py").write_text("router = object()\n")
+    (core / "__init__.py").write_text("")
+    (core / "config.py").write_text("settings = {}\n")
+    (repo_path / "app" / "main.py").write_text("from .api import api_router\n")
+
+    from backend.app.config.models import Configuration, IgnoreConfig
+
+    config = Configuration(
+        entry_points=("app/main.py",),
+        ignore=IgnoreConfig(),
+    )
+    graph = analyze_repo(repo_path, config=config)
+
+    edges = {(e.source, e.target) for e in graph.edges}
+    assert ("app.api.router", "app.api.routes.alerts") in edges
+    assert ("app.api.router", "app.api.routes.summary") in edges
+    assert ("app.api.router", "app.core.config") in edges
+    assert ("app.main", "app.api") in edges
+    assert ("app.api", "app.api.router") in edges
+
+    assert graph.metrics is not None
+    assert graph.metrics.dead_modules is not None
+    dead = {d.module for d in graph.metrics.dead_modules.dead_modules}
+    assert "app.api.routes.alerts" not in dead
+    assert "app.core.config" not in dead
+    # deps is never imported
+    assert "app.api.deps" in dead

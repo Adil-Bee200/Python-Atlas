@@ -375,3 +375,62 @@ import app.submodule.submodule_function as submodule_function
         "import app.submodule.submodule_function",
     }
     assert len(parsed.imports) == 7
+
+def test_parse_relative_import_same_package(tmp_path):
+    app_dir = tmp_path / "app" / "api"
+    app_dir.mkdir(parents=True)
+    (app_dir / "router.py").write_text(
+        "from .routes import alerts, summary\n"
+        "from . import deps\n"
+    )
+
+    module = PythonModule(path=Path("app/api/router.py"), module_path="app.api.router")
+    parsed = parse_module(tmp_path, module)
+
+    by_raw = {imp.raw_import: imp for imp in parsed.imports}
+    routes_imp = by_raw["from .routes import alerts, summary"]
+    deps_imp = by_raw["from . import deps"]
+
+    assert routes_imp.module_name == "app.api.routes"
+    assert routes_imp.imported_names == ("alerts", "summary")
+    assert deps_imp.module_name == "app.api"
+    assert deps_imp.imported_names == ("deps",)
+
+
+def test_parse_relative_import_parent_package(tmp_path):
+    app_dir = tmp_path / "app" / "api"
+    app_dir.mkdir(parents=True)
+    (app_dir / "router.py").write_text("from ..core.config import settings\n")
+
+    module = PythonModule(path=Path("app/api/router.py"), module_path="app.api.router")
+    parsed = parse_module(tmp_path, module)
+
+    assert len(parsed.imports) == 1
+    imp = parsed.imports[0]
+    assert imp.raw_import == "from ..core.config import settings"
+    assert imp.module_name == "app.core.config"
+    assert imp.imported_names == ("settings",)
+
+
+def test_parse_relative_import_in_package_init(tmp_path):
+    app_dir = tmp_path / "app" / "api"
+    app_dir.mkdir(parents=True)
+    (app_dir / "__init__.py").write_text("from .router import api_router\n")
+
+    module = PythonModule(path=Path("app/api/__init__.py"), module_path="app.api")
+    parsed = parse_module(tmp_path, module)
+
+    assert parsed.imports[0].module_name == "app.api.router"
+    assert parsed.imports[0].raw_import == "from .router import api_router"
+
+
+def test_parse_relative_import_beyond_top_level(tmp_path):
+    app_dir = tmp_path / "app"
+    app_dir.mkdir()
+    (app_dir / "main.py").write_text("from ....outside import x\n")
+
+    module = PythonModule(path=Path("app/main.py"), module_path="app.main")
+    parsed = parse_module(tmp_path, module)
+
+    assert parsed.imports[0].raw_import == "from ....outside import x"
+    assert parsed.imports[0].module_name == ""

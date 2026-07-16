@@ -624,3 +624,56 @@ def test_graph_builder_symbol_import_does_not_create_fake_module_edge():
         GraphEdge("main", "models", 1, ("from models import User",)),
     }
     assert graph.unresolved_imports == ()
+
+
+def test_graph_builder_uses_resolved_relative_module_names():
+    parsed_result = ParsedResult(
+        repo_root=Path("repo"),
+        modules=(
+            ParsedModule(
+                path=Path("app/api/router.py"),
+                module_path="app.api.router",
+                imports=(
+                    ParsedImport(
+                        raw_import="from .routes import alerts",
+                        module_name="app.api.routes",
+                        imported_names=("alerts",),
+                    ),
+                    ParsedImport(
+                        raw_import="from ..core.config import settings",
+                        module_name="app.core.config",
+                        imported_names=("settings",),
+                    ),
+                ),
+                error=None,
+            ),
+            ParsedModule(
+                path=Path("app/api/routes/__init__.py"),
+                module_path="app.api.routes",
+                imports=tuple(),
+                error=None,
+            ),
+            ParsedModule(
+                path=Path("app/api/routes/alerts.py"),
+                module_path="app.api.routes.alerts",
+                imports=tuple(),
+                error=None,
+            ),
+            ParsedModule(
+                path=Path("app/core/config.py"),
+                module_path="app.core.config",
+                imports=tuple(),
+                error=None,
+            ),
+        ),
+    )
+
+    graph = build_graph(parsed_result)
+    targets = {edge.target for edge in graph.edges if edge.source == "app.api.router"}
+
+    assert targets == {
+        "app.api.routes",
+        "app.api.routes.alerts",
+        "app.core.config",
+    }
+    assert graph.unresolved_imports == ()
