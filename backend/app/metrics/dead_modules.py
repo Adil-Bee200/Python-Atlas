@@ -14,6 +14,6 @@ def analyze_dead_modules(graph: Graph, entry_points: tuple[str, ...]) -> GraphDe
 
     dead_modules = tuple(GraphDeadModules(module, "Unreached by entry points") for module in unreached_modules)
     return GraphDeadModulesMetrics(
-        dead_modules=tuple(dead_modules),
+        dead_modules=dead_modules,
         dead_modules_percentage=len(dead_modules) / len(G.nodes),
     )
