@@ -350,3 +350,45 @@ def test_analyze_repo_nested_package_root_layout(tmp_path: Path):
     config_node = next(n for n in graph.nodes if n.module_path == "backend.app.core.config")
     assert main_node.fan_out == 1
     assert config_node.fan_in == 1
+
+
+def test_analyze_repo_from_package_import_reaches_submodules(tmp_path: Path):
+    repo_path = tmp_path / "dashboard"
+    routes = repo_path / "backend" / "app" / "api" / "routes"
+    routes.mkdir(parents=True)
+    (repo_path / "backend" / "app" / "__init__.py").write_text("")
+    (repo_path / "backend" / "app" / "api" / "__init__.py").write_text(
+        "from app.api.router import api_router\n"
+    )
+    (repo_path / "backend" / "app" / "api" / "router.py").write_text(
+        "from app.api.routes import alerts, summary\n"
+    )
+    (routes / "__init__.py").write_text("")
+    (routes / "alerts.py").write_text("router = object()\n")
+    (routes / "summary.py").write_text("router = object()\n")
+    (repo_path / "backend" / "app" / "main.py").write_text(
+        "from app.api import api_router\n"
+    )
+
+    from backend.app.config.models import Configuration, IgnoreConfig
+    from backend.app.metrics.entry_points import resolve_entry_points
+
+    config = Configuration(
+        entry_points=("backend/app/main.py",),
+        ignore=IgnoreConfig(),
+    )
+    graph = analyze_repo(repo_path, config=config)
+
+    router_targets = {
+        edge.target for edge in graph.edges if edge.source == "backend.app.api.router"
+    }
+    assert "backend.app.api.routes.alerts" in router_targets
+    assert "backend.app.api.routes.summary" in router_targets
+
+    resolved = resolve_entry_points(graph, config.entry_points)
+    assert resolved.missing == ()
+    assert graph.metrics is not None
+    assert graph.metrics.dead_modules is not None
+    dead = {d.module for d in graph.metrics.dead_modules.dead_modules}
+    assert "backend.app.api.routes.alerts" not in dead
+    assert "backend.app.api.routes.summary" not in dead

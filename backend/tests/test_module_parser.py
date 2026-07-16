@@ -49,6 +49,8 @@ def main():
     }
 
     assert len(parsed.imports) == 4
+    models_import = next(imp for imp in parsed.imports if imp.module_name == "app.models")
+    assert models_import.imported_names == ("User", "Post")
 
 def test_parse_module_extracts_imports_from_submodule(tmp_path):
     ## test: a module that imports from a submodule

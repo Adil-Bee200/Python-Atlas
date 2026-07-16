@@ -520,6 +520,7 @@ def test_graph_builder_ambiguous_suffix_stays_unresolved():
                     ParsedImport(
                         raw_import="from app.config import settings",
                         module_name="app.config",
+                        imported_names=("settings",),
                     ),
                 ),
                 error=None,
@@ -542,3 +543,84 @@ def test_graph_builder_ambiguous_suffix_stays_unresolved():
     graph = build_graph(parsed_result)
     assert graph.edges == ()
     assert set(graph.unresolved_imports) == {"from app.config import settings"}
+
+
+def test_graph_builder_expands_from_package_import_to_submodules():
+    parsed_result = ParsedResult(
+        repo_root=Path("repo"),
+        modules=(
+            ParsedModule(
+                path=Path("backend/app/api/router.py"),
+                module_path="backend.app.api.router",
+                imports=(
+                    ParsedImport(
+                        raw_import="from app.api.routes import alerts, summary",
+                        module_name="app.api.routes",
+                        imported_names=("alerts", "summary"),
+                    ),
+                ),
+                error=None,
+            ),
+            ParsedModule(
+                path=Path("backend/app/api/routes/__init__.py"),
+                module_path="backend.app.api.routes",
+                imports=tuple(),
+                error=None,
+            ),
+            ParsedModule(
+                path=Path("backend/app/api/routes/alerts.py"),
+                module_path="backend.app.api.routes.alerts",
+                imports=tuple(),
+                error=None,
+            ),
+            ParsedModule(
+                path=Path("backend/app/api/routes/summary.py"),
+                module_path="backend.app.api.routes.summary",
+                imports=tuple(),
+                error=None,
+            ),
+        ),
+    )
+
+    graph = build_graph(parsed_result)
+    targets = {edge.target for edge in graph.edges if edge.source == "backend.app.api.router"}
+
+    assert targets == {
+        "backend.app.api.routes",
+        "backend.app.api.routes.alerts",
+        "backend.app.api.routes.summary",
+    }
+    assert graph.unresolved_imports == ()
+
+
+def test_graph_builder_symbol_import_does_not_create_fake_module_edge():
+    parsed_result = ParsedResult(
+        repo_root=Path("repo"),
+        modules=(
+            ParsedModule(
+                path=Path("main.py"),
+                module_path="main",
+                imports=(
+                    ParsedImport(
+                        raw_import="from models import User",
+                        module_name="models",
+                        imported_names=("User",),
+                    ),
+                ),
+                error=None,
+            ),
+            ParsedModule(
+                path=Path("models.py"),
+                module_path="models",
+                imports=tuple(),
+                error=None,
+            ),
+        ),
+    )
+
+    graph = build_graph(parsed_result)
+
+    assert set(graph.edges) == {
+        GraphEdge("main", "models", 1, ("from models import User",)),
+    }
+    assert graph.unresolved_imports == ()

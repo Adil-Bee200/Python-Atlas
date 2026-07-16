@@ -1,12 +1,13 @@
 from pathlib import Path
 from backend.app.models.import_models import ParsedModule, ParsedImport, ParsedResult
 from backend.app.models.scan_models import ScanResult, PythonModule
-import ast 
+import ast
+
 
 class ImportVisitor(ast.NodeVisitor):
     def __init__(self):
-        self.imports : list[ParsedImport] = []
-    
+        self.imports: list[ParsedImport] = []
+
     def visit_Import(self, node: ast.Import):
         for alias in node.names:
             self.imports.append(
@@ -15,22 +16,21 @@ class ImportVisitor(ast.NodeVisitor):
                     module_name=alias.name,
                 )
             )
-    
+
     def visit_ImportFrom(self, node: ast.ImportFrom):
-        # One `from X import ...` statement should produce one ParsedImport per module,
-        # regardless of how many names are imported from that module.
         module_name = node.module or ""
         if module_name == "__future__":
             return
 
-        imported_names = ", ".join(alias.name for alias in node.names)
+        imported_names = tuple(alias.name for alias in node.names)
+        raw_names = ", ".join(imported_names)
         self.imports.append(
             ParsedImport(
-                raw_import=f"from {module_name} import {imported_names}",
+                raw_import=f"from {module_name} import {raw_names}",
                 module_name=module_name,
+                imported_names=imported_names,
             )
         )
-
 
 
 def parse_module(repo_root: Path, module: PythonModule) -> ParsedModule:
@@ -48,8 +48,6 @@ def parse_module(repo_root: Path, module: PythonModule) -> ParsedModule:
             error=e,
         )
 
-    tree = ast.parse(source)
-
     visitor = ImportVisitor()
     visitor.visit(tree)
 
@@ -58,6 +56,7 @@ def parse_module(repo_root: Path, module: PythonModule) -> ParsedModule:
         module_path=module.module_path,
         imports=tuple(visitor.imports),
     )
+
 
 def parse_all_modules(scan_result: ScanResult) -> ParsedResult:
     modules = tuple(
