@@ -677,3 +677,94 @@ def test_graph_builder_uses_resolved_relative_module_names():
         "app.core.config",
     }
     assert graph.unresolved_imports == ()
+
+
+def test_graph_builder_follows_package_init_reexports():
+    parsed_result = ParsedResult(
+        repo_root=Path("repo"),
+        modules=(
+            ParsedModule(
+                path=Path("app/main.py"),
+                module_path="app.main",
+                imports=(
+                    ParsedImport(
+                        raw_import="from app.models import Ticker",
+                        module_name="app.models",
+                        imported_names=("Ticker",),
+                        bound_names=("Ticker",),
+                    ),
+                ),
+                error=None,
+            ),
+            ParsedModule(
+                path=Path("app/models/__init__.py"),
+                module_path="app.models",
+                imports=(
+                    ParsedImport(
+                        raw_import="from app.models.models import Ticker",
+                        module_name="app.models.models",
+                        imported_names=("Ticker",),
+                        bound_names=("Ticker",),
+                    ),
+                ),
+                error=None,
+            ),
+            ParsedModule(
+                path=Path("app/models/models.py"),
+                module_path="app.models.models",
+                imports=tuple(),
+                error=None,
+            ),
+        ),
+    )
+
+    graph = build_graph(parsed_result)
+    main_targets = {e.target for e in graph.edges if e.source == "app.main"}
+
+    assert main_targets == {"app.models", "app.models.models"}
+    assert graph.unresolved_imports == ()
+
+
+def test_graph_builder_follows_aliased_package_init_reexports():
+    parsed_result = ParsedResult(
+        repo_root=Path("repo"),
+        modules=(
+            ParsedModule(
+                path=Path("app/main.py"),
+                module_path="app.main",
+                imports=(
+                    ParsedImport(
+                        raw_import="from app.api import router",
+                        module_name="app.api",
+                        imported_names=("router",),
+                        bound_names=("router",),
+                    ),
+                ),
+                error=None,
+            ),
+            ParsedModule(
+                path=Path("app/api/__init__.py"),
+                module_path="app.api",
+                imports=(
+                    ParsedImport(
+                        raw_import="from app.api.router import api_router",
+                        module_name="app.api.router",
+                        imported_names=("api_router",),
+                        bound_names=("router",),
+                    ),
+                ),
+                error=None,
+            ),
+            ParsedModule(
+                path=Path("app/api/router.py"),
+                module_path="app.api.router",
+                imports=tuple(),
+                error=None,
+            ),
+        ),
+    )
+
+    graph = build_graph(parsed_result)
+    main_targets = {e.target for e in graph.edges if e.source == "app.main"}
+
+    assert main_targets == {"app.api", "app.api.router"}

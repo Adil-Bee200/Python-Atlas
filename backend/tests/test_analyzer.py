@@ -438,3 +438,22 @@ def test_analyze_repo_relative_imports_create_edges_and_reachability(tmp_path: P
     assert "app.core.config" not in dead
     # deps is never imported
     assert "app.api.deps" in dead
+
+
+def test_analyze_repo_package_init_reexports_create_direct_edges(tmp_path: Path):
+    repo_path = tmp_path / "proj"
+    models = repo_path / "app" / "models"
+    models.mkdir(parents=True)
+    (repo_path / "app" / "__init__.py").write_text("")
+    (models / "__init__.py").write_text(
+        "from app.models.models import Ticker as Ticker\n"
+        "__all__ = ['Ticker']\n"
+    )
+    (models / "models.py").write_text("class Ticker: pass\n")
+    (repo_path / "app" / "main.py").write_text("from app.models import Ticker\n")
+
+    graph = analyze_repo(repo_path)
+    main_targets = {e.target for e in graph.edges if e.source == "app.main"}
+
+    assert "app.models" in main_targets
+    assert "app.models.models" in main_targets

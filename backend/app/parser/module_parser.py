@@ -70,6 +70,7 @@ class ImportVisitor(ast.NodeVisitor):
             return
 
         imported_names = tuple(alias.name for alias in node.names)
+        bound_names = tuple(alias.asname or alias.name for alias in node.names)
         raw_import = _format_from_import(level, module, imported_names)
 
         if level > 0:
@@ -88,6 +89,7 @@ class ImportVisitor(ast.NodeVisitor):
                 raw_import=raw_import,
                 module_name=module_name,
                 imported_names=imported_names,
+                bound_names=bound_names,
             )
         )
 
