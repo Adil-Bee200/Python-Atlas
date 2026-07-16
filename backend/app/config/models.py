@@ -9,7 +9,8 @@ class ArchitectureLayer:
 
 @dataclass(frozen=True)
 class ArchitectureConfig:
-    layers: tuple[ArchitectureLayer, ...]
+    layers: tuple[ArchitectureLayer, ...] = ()
+
 
 @dataclass(frozen=True)
 class IgnoreConfig:
@@ -22,4 +23,4 @@ class IgnoreConfig:
 class Configuration:
     ignore: IgnoreConfig = field(default_factory=IgnoreConfig)
     entry_points: tuple[str, ...] = ()
-    architecture: ArchitectureConfig | None = None
+    architecture: ArchitectureConfig = field(default_factory=ArchitectureConfig)

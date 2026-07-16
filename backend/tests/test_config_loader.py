@@ -4,7 +4,12 @@ import pytest
 
 from backend.app.config.defaults import DEFAULT_CONFIGURATION, DEFAULT_IGNORED_DIRS
 from backend.app.config.loader import ConfigOverrides, load_config
-from backend.app.config.models import Configuration, IgnoreConfig
+from backend.app.config.models import (
+    ArchitectureConfig,
+    ArchitectureLayer,
+    Configuration,
+    IgnoreConfig,
+)
 from backend.app.main import overrides_from_args, parse_args
 
 
@@ -96,6 +101,57 @@ def test_load_config_dedupes_ignore_entries(tmp_path: Path):
     assert config.ignore.directories.count("custom") == 1
 
 
+def test_load_config_architecture_layers(tmp_path: Path):
+    path = tmp_path / "codeatlas.yaml"
+    path.write_text(
+        "architecture:\n"
+        "  layers:\n"
+        "    api:\n"
+        "      patterns:\n"
+        "        - app.api.*\n"
+        "      may_depend_on:\n"
+        "        - services\n"
+        "    services:\n"
+        "      patterns:\n"
+        "        - app.services.*\n"
+        "      may_depend_on:\n"
+        "        - repositories\n"
+        "    models:\n"
+        "      patterns:\n"
+        "        - app.models.*\n"
+    )
+
+    config = load_config(path)
+
+    assert config.architecture == ArchitectureConfig(
+        layers=(
+            ArchitectureLayer(
+                name="api",
+                module_patterns=("app.api.*",),
+                allowed_dependencies=("services",),
+            ),
+            ArchitectureLayer(
+                name="services",
+                module_patterns=("app.services.*",),
+                allowed_dependencies=("repositories",),
+            ),
+            ArchitectureLayer(
+                name="models",
+                module_patterns=("app.models.*",),
+                allowed_dependencies=(),
+            ),
+        )
+    )
+
+
+def test_load_config_rejects_unknown_architecture_keys(tmp_path: Path):
+    path = tmp_path / "codeatlas.yaml"
+    path.write_text("architecture:\n  foo: 1\n")
+
+    with pytest.raises(ValueError, match="Unknown architecture keys"):
+        load_config(path)
+
+
 def test_load_config_rejects_unknown_keys(tmp_path: Path):
     path = tmp_path / "codeatlas.yaml"
     path.write_text("foo: 1\n")
@@ -183,6 +239,29 @@ def test_cli_partial_override_leaves_other_yaml_fields(tmp_path: Path):
     assert "scripts" not in config.ignore.modules
     assert "vendor/legacy" in config.ignore.paths
     assert "tests" in config.ignore.modules
+
+
+def test_cli_architecture_override_replaces_yaml(tmp_path: Path):
+    path = tmp_path / "codeatlas.yaml"
+    path.write_text(
+        "architecture:\n"
+        "  layers:\n"
+        "    api:\n"
+        "      patterns:\n"
+        "        - app.api.*\n"
+    )
+    override = ArchitectureConfig(
+        layers=(
+            ArchitectureLayer(
+                name="domain",
+                module_patterns=("app.domain.*",),
+            ),
+        )
+    )
+
+    config = load_config(path, overrides=ConfigOverrides(architecture=override))
+
+    assert config.architecture == override
 
 
 def test_overrides_from_args_none_when_flags_absent():
