@@ -1,0 +1,13 @@
+entry_points:
+  files:
+    - backend/app/main.py
+
+ignore:
+  directories:
+    - migrations
+    - tests
+    - __pycache__
+    - .pytest_cache
+    - .ruff_cache
+    - .mypy_cache
+    - .venv

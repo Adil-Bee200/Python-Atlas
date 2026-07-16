@@ -1,18 +1,5 @@
-DEFAULT_IGNORED_DIRS = {
-    ".git",
-    ".venv",
-    "venv",
-    "__pycache__",
-    "node_modules",
-    "migrations",
-    "alembic",
-    ".pytest_cache",
-    ".mypy_cache",
-    ".ruff_cache",
-    "alembic",
-    "migrations",
-}
+"""Back-compat re-exports for the repo scanner."""
 
-DEFAULT_IGNORED_PATHS = {
-    "alembic/versions",
-}
+from backend.app.config.defaults import DEFAULT_IGNORED_DIRS, DEFAULT_IGNORED_PATHS
+
+__all__ = ["DEFAULT_IGNORED_DIRS", "DEFAULT_IGNORED_PATHS"]
