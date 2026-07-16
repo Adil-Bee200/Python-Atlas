@@ -59,4 +59,8 @@ def print_graph_summary(graph: Graph) -> None:
         print(f"{error}")
 
     if graph.metrics is not None:
+        if graph.metrics.missing_entry_points:
+            print("Dead-module analysis skipped; entry points not found in graph:")
+            for entry in graph.metrics.missing_entry_points:
+                print(f"  - {entry}")
         print(graph.metrics)

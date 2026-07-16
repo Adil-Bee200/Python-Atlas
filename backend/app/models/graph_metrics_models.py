@@ -45,4 +45,5 @@ class GraphMetrics:
     isolates: GraphIsolatesMetrics
     cycles: GraphCyclesMetrics
     hub_modules: GraphHubModulesMetrics
-    dead_modules: GraphDeadModulesMetrics | None = None # for now 
+    dead_modules: GraphDeadModulesMetrics | None = None
+    missing_entry_points: tuple[str, ...] = ()

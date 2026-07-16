@@ -19,9 +19,14 @@ def analyze_metrics(
     hub_modules = analyze_hub_modules(graph, centrality)
 
     dead_modules = None
-    resolved_entry_points = resolve_entry_points(graph, entry_points)
-    if resolved_entry_points:
-        dead_modules = analyze_dead_modules(graph, resolved_entry_points)
+    missing_entry_points: tuple[str, ...] = ()
+
+    if entry_points:
+        resolution = resolve_entry_points(graph, entry_points)
+        missing_entry_points = resolution.missing
+        # All-or-nothing: any missing entry point skips dead-module analysis.
+        if not missing_entry_points:
+            dead_modules = analyze_dead_modules(graph, resolution.resolved)
 
     return GraphMetrics(
         centrality=centrality,
@@ -29,4 +34,5 @@ def analyze_metrics(
         cycles=cycles,
         hub_modules=hub_modules,
         dead_modules=dead_modules,
+        missing_entry_points=missing_entry_points,
     )
