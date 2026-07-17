@@ -1,4 +1,31 @@
 from dataclasses import dataclass
+from backend.app.config.models import ArchitectureLayer
+
+@dataclass(frozen=True)
+class LayerAssignment:
+    layer: ArchitectureLayer
+    module: str
+
+@dataclass(frozen=True)
+class LayerAmbiguity:
+    module: str
+    matching_layers: tuple[str, ...]
+
+@dataclass(frozen=True)
+class LayerViolation:
+    source_module: str
+    target_module: str
+    source_layer: str
+    target_layer: str
+
+@dataclass(frozen=True)
+class GraphArchitectureMetrics:
+    assignments: tuple[LayerAssignment, ...] = ()
+    violations: tuple[LayerViolation, ...] = ()
+    unclassified_modules: tuple[str, ...] = ()
+    empty_layers: tuple[str, ...] = ()
+    ambiguous_assignments: tuple[LayerAmbiguity, ...] = ()
+    warnings: tuple[str, ...] = ()
 
 @dataclass(frozen=True)
 class GraphDeadModules:
@@ -46,4 +73,5 @@ class GraphMetrics:
     cycles: GraphCyclesMetrics
     hub_modules: GraphHubModulesMetrics
     dead_modules: GraphDeadModulesMetrics | None = None
+    architecture: GraphArchitectureMetrics | None = None
     missing_entry_points: tuple[str, ...] = ()
