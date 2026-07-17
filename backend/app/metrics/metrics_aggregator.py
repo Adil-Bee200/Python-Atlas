@@ -1,3 +1,5 @@
+from backend.app.config.models import ArchitectureLayer
+from backend.app.metrics.architecture_metrics import analyze_graph_architecture
 from backend.app.metrics.centrality import analyze_centrality
 from backend.app.metrics.cycles import analyze_cycles
 from backend.app.metrics.dead_modules import analyze_dead_modules
@@ -11,6 +13,7 @@ from backend.app.models.graph_metrics_models import GraphMetrics
 def analyze_metrics(
     graph: Graph,
     entry_points: tuple[str, ...] = (),
+    layers: tuple[ArchitectureLayer, ...] = (),
 ) -> GraphMetrics:
     # Hub modules depend on centrality, so centrality runs first.
     centrality = analyze_centrality(graph)
@@ -28,11 +31,16 @@ def analyze_metrics(
         if not missing_entry_points:
             dead_modules = analyze_dead_modules(graph, resolution.resolved)
 
+    architecture = (
+        analyze_graph_architecture(graph, layers) if layers else None
+    )
+
     return GraphMetrics(
         centrality=centrality,
         isolates=isolates,
         cycles=cycles,
         hub_modules=hub_modules,
         dead_modules=dead_modules,
+        architecture=architecture,
         missing_entry_points=missing_entry_points,
     )

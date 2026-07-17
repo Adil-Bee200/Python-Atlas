@@ -25,7 +25,11 @@ def analyze_repo(
     scan_result = scan_repo(repo_path, ignore=config.ignore)
     parsed_result = parse_all_modules(scan_result)
     graph = build_graph(parsed_result)
-    metrics = analyze_metrics(graph, entry_points=config.entry_points)
+    metrics = analyze_metrics(
+        graph,
+        entry_points=config.entry_points,
+        layers=config.architecture.layers,
+    )
     return replace(graph, metrics=metrics)
 
 
@@ -63,4 +67,13 @@ def print_graph_summary(graph: Graph) -> None:
             print("Dead-module analysis skipped; entry points not found in graph:")
             for entry in graph.metrics.missing_entry_points:
                 print(f"  - {entry}")
+        architecture = graph.metrics.architecture
+        if architecture is not None:
+            for warning in architecture.warnings:
+                print(f"Warning: {warning}")
+            if architecture.ambiguous_assignments:
+                print("Ambiguous layer assignments:")
+                for ambiguity in architecture.ambiguous_assignments:
+                    layers = ", ".join(ambiguity.matching_layers)
+                    print(f"  - {ambiguity.module}: {layers}")
         print(graph.metrics)
