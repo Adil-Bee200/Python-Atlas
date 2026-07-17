@@ -112,7 +112,20 @@ def _parse_architecture(raw: Any) -> ArchitectureConfig:
             raise ValueError("Architecture layer names must be strings")
         layers.append(_parse_architecture_layer(name, layer_raw))
 
-    return ArchitectureConfig(layers=tuple(layers))
+    architecture = ArchitectureConfig(layers=tuple(layers))
+    _validate_architecture(architecture)
+    return architecture
+
+
+def _validate_architecture(architecture: ArchitectureConfig) -> None:
+    layer_names = {layer.name for layer in architecture.layers}
+    for layer in architecture.layers:
+        for allowed_dependency in layer.allowed_dependencies:
+            if allowed_dependency not in layer_names:
+                raise ValueError(
+                    f"Configuration Error: Layer {layer.name} depends on "
+                    f"undefined layer {allowed_dependency}"
+                )
 
 
 def _merge_ignore(user_ignore: Any) -> IgnoreConfig:
@@ -225,6 +238,8 @@ def load_config(
                 raw = yaml.safe_load(f)
             config = _build_configuration(raw)
 
-    if overrides is None:
-        return config
-    return apply_overrides(config, overrides)
+    if overrides is not None:
+        config = apply_overrides(config, overrides)
+        _validate_architecture(config.architecture)
+
+    return config

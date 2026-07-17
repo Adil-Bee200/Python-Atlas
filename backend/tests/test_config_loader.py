@@ -116,6 +116,11 @@ def test_load_config_architecture_layers(tmp_path: Path):
         "        - app.services.*\n"
         "      may_depend_on:\n"
         "        - repositories\n"
+        "    repositories:\n"
+        "      patterns:\n"
+        "        - app.repositories.*\n"
+        "      may_depend_on:\n"
+        "        - models\n"
         "    models:\n"
         "      patterns:\n"
         "        - app.models.*\n"
@@ -136,12 +141,54 @@ def test_load_config_architecture_layers(tmp_path: Path):
                 allowed_dependencies=("repositories",),
             ),
             ArchitectureLayer(
+                name="repositories",
+                module_patterns=("app.repositories.*",),
+                allowed_dependencies=("models",),
+            ),
+            ArchitectureLayer(
                 name="models",
                 module_patterns=("app.models.*",),
                 allowed_dependencies=(),
             ),
         )
     )
+
+
+def test_load_config_rejects_undefined_layer_dependency(tmp_path: Path):
+    path = tmp_path / "codeatlas.yaml"
+    path.write_text(
+        "architecture:\n"
+        "  layers:\n"
+        "    api:\n"
+        "      patterns:\n"
+        "        - app.api.*\n"
+        "      may_depend_on:\n"
+        "        - services\n"
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="Layer api depends on undefined layer services",
+    ):
+        load_config(path)
+
+
+def test_load_config_rejects_undefined_layer_dependency_in_override():
+    override = ArchitectureConfig(
+        layers=(
+            ArchitectureLayer(
+                name="api",
+                module_patterns=("app.api.*",),
+                allowed_dependencies=("missing",),
+            ),
+        )
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="Layer api depends on undefined layer missing",
+    ):
+        load_config(None, overrides=ConfigOverrides(architecture=override))
 
 
 def test_load_config_rejects_unknown_architecture_keys(tmp_path: Path):
