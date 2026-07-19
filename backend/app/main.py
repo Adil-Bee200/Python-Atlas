@@ -5,6 +5,7 @@ import sys
 
 from backend.app.analysis.analyzer import analyze_repo, print_graph_summary
 from backend.app.config.loader import ConfigOverrides, load_config
+from backend.app.export.graph_json import write_graph_as_json_file
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -83,6 +84,7 @@ def main(argv: list[str] | None = None) -> None:
         sys.exit(1)
 
     print_graph_summary(graph)
+    write_graph_as_json_file(graph, "graph.json")
 
 
 if __name__ == "__main__":
