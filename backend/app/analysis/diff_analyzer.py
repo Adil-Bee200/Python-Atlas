@@ -3,6 +3,12 @@ from pathlib import Path
 from backend.app.config.models import Configuration
 from backend.app.models.graph_metrics_models import ArchitectureDifference
 from git import Repo
+from backend.app.git.worktree import create_worktree
+from backend.app.analysis.repo_analyzer import analyze_repo
+
+def compare_graphs(base_graph: Graph, target_graph: Graph) -> ArchitectureDifference:
+    # TODO: Implement this
+    pass
 
 def resolve_commit(repo: Repo, revision: str) -> Commit:
     # Checks if the revision is a commit and returns the commit object
@@ -34,16 +40,28 @@ def analyze_repo_diff(
     repo_root: Path, 
     config: Configuration,
     base_revision: str = "HEAD~1",
-    target_revision: str = None,) -> ArchitectureDifference:
+    target_revision: str | None = None,) -> ArchitectureDifference:
 
-    repo = Repo(resolve_git_repo(repo_root))
+    resolved_repo_root = resolve_git_repo(repo_root)
+    repo = Repo(resolved_repo_root)
 
-    if not target_revision: # default to working tree
-        target = WorkingTreeTarget(repo)
-    else:
-        target = resolve_commit(repo, target_revision)
+    base_commit = resolve_commit(repo, base_revision)
+
+    target_commit = (
+        resolve_commit(repo, target_revision)
+        if target_revision is not None 
+        else None
+    )
+
+    with create_worktree(repo, base_commit) as base_path:
+        base_graph = analyze_repo(base_path, config)
     
-    base = resolve_commit(repo, base_revision)
+    if target_commit is not None:
+        working_tree_path = Path(repo.working_tree_dir)
+        target_graph = analyze_repo(working_tree_path, config)
+    else:
+        with create_worktree(repo, target_commit) as target_path:
+            target_graph = analyze_repo(target_path, config)
 
     """ 
     Steps:
