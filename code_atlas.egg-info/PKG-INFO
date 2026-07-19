@@ -1,0 +1,28 @@
+Metadata-Version: 2.4
+Name: code-atlas
+Version: 0.1.0
+Summary: Python architecture explorer that turns codebases into dependency graphs
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: networkx>=3.6
+Requires-Dist: numpy>=2.5
+Requires-Dist: PyYAML>=6.0
+Requires-Dist: scipy>=1.18
+Provides-Extra: dev
+Requires-Dist: pytest>=9.0; extra == "dev"
+Requires-Dist: Pygments>=2.20; extra == "dev"
+
+Code Atlas MVP
+
+Goal: Build a Python-focused tool that helps developers understand a codebase by turning it into an interactive dependency map.
+
+## CLI
+
+From the repo root (with the project venv active):
+
+```bash
+pip install -e .
+atlas /path/to/target/repo
+```
+
+Optional flags: `--config`, `--entry-point`, `--ignore-dir`, `--ignore-module`, `--ignore-path`.

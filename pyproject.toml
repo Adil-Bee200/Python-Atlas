@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "code-atlas"
+version = "0.1.0"
+description = "Python architecture explorer that turns codebases into dependency graphs"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "networkx>=3.6",
+    "numpy>=2.5",
+    "PyYAML>=6.0",
+    "scipy>=1.18",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.0",
+    "Pygments>=2.20",
+]
+
+[project.scripts]
+atlas = "backend.app.main:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["backend*"]
+exclude = ["backend.tests*"]
