@@ -2,6 +2,20 @@ from dataclasses import dataclass
 from backend.app.config.models import ArchitectureLayer
 
 @dataclass(frozen=True)
+class ModuleDependencyDifference:
+    module: str
+    added_dependencies: tuple[str, ...]
+    removed_dependencies: tuple[str, ...]
+
+@dataclass(frozen=True)
+class ArchitectureDifference:
+    base_revision: str
+    target_revision: str
+    added_modules: tuple[str, ...]
+    removed_modules: tuple[str, ...]
+    module_dependencies: tuple[ModuleDependencyDifference, ...]
+
+@dataclass(frozen=True)
 class LayerAssignment:
     layer: ArchitectureLayer
     module: str
@@ -10,6 +24,12 @@ class LayerAssignment:
 class LayerAmbiguity:
     module: str
     matching_layers: tuple[str, ...]
+
+@dataclass(frozen=True)
+class LayerClassification:
+    assignments: tuple[LayerAssignment, ...] = ()
+    unclassified_modules: tuple[str, ...] = ()
+    ambiguous_assignments: tuple[LayerAmbiguity, ...] = ()
 
 @dataclass(frozen=True)
 class LayerViolation:

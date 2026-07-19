@@ -8,6 +8,7 @@ from backend.app.models.graph_metrics_models import (
     GraphArchitectureMetrics,
     LayerAmbiguity,
     LayerAssignment,
+    LayerClassification,
     LayerViolation,
 )
 from backend.app.models.graph_models import Graph, GraphEdge, GraphNode
@@ -15,13 +16,6 @@ from backend.app.models.graph_models import Graph, GraphEdge, GraphNode
 INCOMPLETE_RESULTS_WARNING = (
     "Architecture analysis results are incomplete due to ambiguous layer assignments"
 )
-
-
-@dataclass(frozen=True)
-class LayerClassification:
-    assignments: tuple[LayerAssignment, ...] = ()
-    unclassified_modules: tuple[str, ...] = ()
-    ambiguous_assignments: tuple[LayerAmbiguity, ...] = ()
 
 
 def _module_matches_layer(module_path: str, layer: ArchitectureLayer) -> bool:
