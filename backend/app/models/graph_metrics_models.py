@@ -12,8 +12,6 @@ class ModuleDependencyDifference:
 
 @dataclass(frozen=True)
 class ArchitectureDifference:
-    base_revision: str
-    target_revision: str
     added_modules: tuple[str, ...]
     removed_modules: tuple[str, ...]
     module_dependencies: dict[str, ModuleDependencyDifference]
@@ -52,6 +50,14 @@ class GraphMetricsDifference:
     removed_assignments: tuple[LayerAssignment, ...]
     added_violations: tuple[LayerViolation, ...]
     removed_violations: tuple[LayerViolation, ...]
+
+
+@dataclass(frozen=True)
+class GraphDifference:
+    base_revision: str
+    target_revision: str
+    architecture: ArchitectureDifference
+    metrics: GraphMetricsDifference | None = None
 
 
 @dataclass(frozen=True)

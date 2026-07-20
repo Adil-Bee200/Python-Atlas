@@ -12,6 +12,11 @@ from backend.app.config.models import Configuration
 from backend.app.git.worktree import create_worktree
 from backend.app.models.graph_metrics_models import (
     ArchitectureDifference,
+    GraphArchitectureMetrics,
+    GraphDifference,
+    GraphMetricsDifference,
+    LayerAssignment,
+    LayerViolation,
     ModuleDependencyDifference,
 )
 from backend.app.models.graph_models import Graph
@@ -27,13 +32,6 @@ class ModuleSetDifference:
 class EdgeKeyDifference:
     added_edge_keys: frozenset[tuple[str, str]]
     removed_edge_keys: frozenset[tuple[str, str]]
-
-
-@dataclass(frozen=True)
-class ModuleDifferenceAnalysis:
-    module_dependencies: dict[str, ModuleDependencyDifference]
-    added_modules: tuple[str, ...]
-    removed_modules: tuple[str, ...]
 
 
 def graph_module_paths(graph: Graph) -> set[str]:
@@ -106,34 +104,102 @@ def build_module_dependency_differences(
     return module_dependencies
 
 
-def compare_modules(
+def compare_architecture(
     base_graph: Graph,
     target_graph: Graph,
-) -> ModuleDifferenceAnalysis:
+) -> ArchitectureDifference:
     module_set_diff = compare_module_sets(base_graph, target_graph)
     edge_key_diff = compare_edge_keys(base_graph, target_graph)
 
-    return ModuleDifferenceAnalysis(
+    return ArchitectureDifference(
         added_modules=module_set_diff.added_modules,
         removed_modules=module_set_diff.removed_modules,
         module_dependencies=build_module_dependency_differences(edge_key_diff),
     )
 
 
+def _assignment_key(assignment: LayerAssignment) -> tuple[str, str]:
+    return (assignment.module, assignment.layer.name)
+
+
+def _violation_key(violation: LayerViolation) -> tuple[str, str, str, str]:
+    return (
+        violation.source_module,
+        violation.target_module,
+        violation.source_layer,
+        violation.target_layer,
+    )
+
+
+def _architecture_metrics(
+    graph: Graph,
+) -> GraphArchitectureMetrics | None:
+    if graph.metrics is None:
+        return None
+    return graph.metrics.architecture
+
+
+def compare_metrics(
+    base_graph: Graph,
+    target_graph: Graph,
+) -> GraphMetricsDifference | None:
+    base_arch = _architecture_metrics(base_graph)
+    target_arch = _architecture_metrics(target_graph)
+    if base_arch is None or target_arch is None:
+        return None
+
+    base_assignments = {
+        _assignment_key(assignment): assignment
+        for assignment in base_arch.assignments
+    }
+    target_assignments = {
+        _assignment_key(assignment): assignment
+        for assignment in target_arch.assignments
+    }
+    added_assignment_keys = set(target_assignments) - set(base_assignments)
+    removed_assignment_keys = set(base_assignments) - set(target_assignments)
+
+    base_violations = {
+        _violation_key(violation): violation for violation in base_arch.violations
+    }
+    target_violations = {
+        _violation_key(violation): violation for violation in target_arch.violations
+    }
+    added_violation_keys = set(target_violations) - set(base_violations)
+    removed_violation_keys = set(base_violations) - set(target_violations)
+
+    return GraphMetricsDifference(
+        added_assignments=tuple(
+            target_assignments[key]
+            for key in sorted(added_assignment_keys)
+        ),
+        removed_assignments=tuple(
+            base_assignments[key]
+            for key in sorted(removed_assignment_keys)
+        ),
+        added_violations=tuple(
+            target_violations[key]
+            for key in sorted(added_violation_keys)
+        ),
+        removed_violations=tuple(
+            base_violations[key]
+            for key in sorted(removed_violation_keys)
+        ),
+    )
+
+
 def compare_graphs(
     base_graph: Graph,
     target_graph: Graph,
+    *,
     base_revision: str,
     target_revision: str,
-) -> ArchitectureDifference:
-    module_difference_analysis = compare_modules(base_graph, target_graph)
-
-    return ArchitectureDifference(
+) -> GraphDifference:
+    return GraphDifference(
         base_revision=base_revision,
         target_revision=target_revision,
-        added_modules=module_difference_analysis.added_modules,
-        removed_modules=module_difference_analysis.removed_modules,
-        module_dependencies=module_difference_analysis.module_dependencies,
+        architecture=compare_architecture(base_graph, target_graph),
+        metrics=compare_metrics(base_graph, target_graph),
     )
 
 
@@ -166,7 +232,7 @@ def analyze_repo_diff(
     config: Configuration,
     base_revision: str = "HEAD~1",
     target_revision: str | None = None,
-) -> ArchitectureDifference:
+) -> GraphDifference:
     resolved_repo_root = resolve_git_repo(repo_root)
     repo = Repo(resolved_repo_root)
 
