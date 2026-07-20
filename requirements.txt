@@ -1,3 +1,7 @@
+-e git+https://github.com/Adil-Bee200/Python-Atlas.git@a40fb67f6666d6397408aaaac1b6a5894147a975#egg=code_atlas
+coverage==7.15.0
+gitdb==4.0.12
+GitPython==3.1.52
 iniconfig==2.3.0
 networkx==3.6.1
 numpy==2.5.1
@@ -5,5 +9,7 @@ packaging==26.2
 pluggy==1.6.0
 Pygments==2.20.0
 pytest==9.1.1
+pytest-cov==7.1.0
 PyYAML==6.0.3
 scipy==1.18.0
+smmap==5.0.3
