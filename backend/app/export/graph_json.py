@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 import json
 
+from backend.app.models.graph_metrics_models import GraphDifference
 from backend.app.models.graph_models import Graph
 
 
@@ -36,6 +37,10 @@ def graph_to_dict(graph: Graph) -> dict:
     }
 
 
+def graph_difference_to_dict(difference: GraphDifference) -> dict:
+    return _json_ready(difference)
+
+
 def print_graph_as_json_string(graph: Graph) -> None:
     print(json.dumps(graph_to_dict(graph), indent=4))
 
@@ -44,3 +49,12 @@ def write_graph_as_json_file(graph: Graph, file_path: Path | str) -> None:
     with open(file_path, "w") as f:
         json.dump(graph_to_dict(graph), f, indent=4)
     print(f"Graph written to {file_path}")
+
+
+def write_graph_difference_as_json_file(
+    difference: GraphDifference,
+    file_path: Path | str,
+) -> None:
+    with open(file_path, "w") as f:
+        json.dump(graph_difference_to_dict(difference), f, indent=4)
+    print(f"Graph difference written to {file_path}")

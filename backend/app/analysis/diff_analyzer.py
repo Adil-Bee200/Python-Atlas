@@ -396,3 +396,113 @@ def analyze_repo_diff(
         base_revision=base_revision,
         target_revision=target_revision_label,
     )
+
+
+def _print_named_list(title: str, items: tuple[str, ...] | list[str]) -> None:
+    if not items:
+        return
+    print(f"{title} ({len(items)}):")
+    for item in items:
+        print(f"  - {item}")
+
+
+def print_graph_difference_summary(difference: GraphDifference) -> None:
+    print(
+        f"Comparing {difference.base_revision} -> {difference.target_revision}"
+    )
+
+    structure = difference.structure
+    print("Structure:")
+    print(f"  Modules added: {len(structure.added_modules)}")
+    print(f"  Modules removed: {len(structure.removed_modules)}")
+    print(f"  Modules with dependency changes: {len(structure.module_dependencies)}")
+    _print_named_list("  Added modules", structure.added_modules)
+    _print_named_list("  Removed modules", structure.removed_modules)
+    if structure.module_dependencies:
+        print("  Dependency changes:")
+        for module, change in structure.module_dependencies.items():
+            added = ", ".join(change.added_dependencies) or "(none)"
+            removed = ", ".join(change.removed_dependencies) or "(none)"
+            print(f"    {module}: +[{added}] -[{removed}]")
+
+    architecture = difference.architecture
+    if architecture is None:
+        print("Architecture: skipped (layer metrics unavailable on one or both sides)")
+    else:
+        print("Architecture:")
+        print(f"  Assignments added: {len(architecture.added_assignments)}")
+        print(f"  Assignments removed: {len(architecture.removed_assignments)}")
+        print(f"  Violations added: {len(architecture.added_violations)}")
+        print(f"  Violations removed: {len(architecture.removed_violations)}")
+        if architecture.added_violations:
+            print("  New violations:")
+            for violation in architecture.added_violations:
+                print(
+                    f"    - {violation.source_module} ({violation.source_layer}) -> "
+                    f"{violation.target_module} ({violation.target_layer})"
+                )
+        _print_named_list(
+            "  Newly unclassified modules",
+            architecture.added_unclassified_modules,
+        )
+        _print_named_list(
+            "  New empty layers",
+            architecture.added_empty_layers,
+        )
+        if architecture.added_ambiguous_assignments:
+            print("  New ambiguous assignments:")
+            for ambiguity in architecture.added_ambiguous_assignments:
+                layers = ", ".join(ambiguity.matching_layers)
+                print(f"    - {ambiguity.module}: {layers}")
+
+    metrics = difference.metrics
+    if metrics is None:
+        print("Metrics: skipped (graph metrics unavailable on one or both sides)")
+        return
+
+    print("Metrics:")
+    print(f"  Isolates added: {len(metrics.added_isolates)}")
+    print(f"  Isolates removed: {len(metrics.removed_isolates)}")
+    print(f"  Cycles added: {len(metrics.added_cycles)}")
+    print(f"  Cycles removed: {len(metrics.removed_cycles)}")
+    print(f"  Hubs added: {len(metrics.added_hub_modules)}")
+    print(f"  Hubs removed: {len(metrics.removed_hub_modules)}")
+    print(f"  Dead modules added: {len(metrics.added_dead_modules)}")
+    print(f"  Dead modules removed: {len(metrics.removed_dead_modules)}")
+    if (
+        metrics.dead_modules_percentage_before is not None
+        or metrics.dead_modules_percentage_after is not None
+    ):
+        before = metrics.dead_modules_percentage_before
+        after = metrics.dead_modules_percentage_after
+        before_s = f"{before:.1%}" if before is not None else "n/a"
+        after_s = f"{after:.1%}" if after is not None else "n/a"
+        print(f"  Dead-module percentage: {before_s} -> {after_s}")
+
+    centrality_changes = (
+        len(metrics.centrality.pagerank)
+        + len(metrics.centrality.betweenness)
+        + len(metrics.centrality.in_degree)
+        + len(metrics.centrality.out_degree)
+    )
+    print(f"  Centrality value changes: {centrality_changes}")
+    _print_named_list("  Added isolates", metrics.added_isolates)
+    _print_named_list("  Removed isolates", metrics.removed_isolates)
+    if metrics.added_cycles:
+        print(f"  Added cycles ({len(metrics.added_cycles)}):")
+        for cycle in metrics.added_cycles:
+            print(f"    - {' -> '.join(cycle)}")
+    if metrics.removed_cycles:
+        print(f"  Removed cycles ({len(metrics.removed_cycles)}):")
+        for cycle in metrics.removed_cycles:
+            print(f"    - {' -> '.join(cycle)}")
+    _print_named_list("  Added hubs", metrics.added_hub_modules)
+    _print_named_list("  Removed hubs", metrics.removed_hub_modules)
+    if metrics.added_dead_modules:
+        print(f"  Newly dead modules ({len(metrics.added_dead_modules)}):")
+        for item in metrics.added_dead_modules:
+            print(f"    - {item.module} ({item.reason})")
+    if metrics.removed_dead_modules:
+        print(f"  No longer dead modules ({len(metrics.removed_dead_modules)}):")
+        for item in metrics.removed_dead_modules:
+            print(f"    - {item.module}")
