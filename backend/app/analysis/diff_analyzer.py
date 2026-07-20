@@ -7,8 +7,37 @@ from backend.app.git.worktree import create_worktree
 from backend.app.analysis.repo_analyzer import analyze_repo
 
 def compare_graphs(base_graph: Graph, target_graph: Graph) -> ArchitectureDifference:
-    # TODO: Implement this
-    pass
+    added_modules = set(target_graph.nodes) - set(base_graph.nodes)
+    removed_modules = set(base_graph.nodes) - set(target_graph.nodes)
+    added_dependencies = set(target_graph.edges) - set(base_graph.edges)
+    removed_dependencies = set(base_graph.edges) - set(target_graph.edges)
+
+    added_module_dependencies: dict[str, list[GraphEdge]] = {}
+    for module in added_modules:
+        dependencies = [edge for edge in target_graph.edges if edge.source == module]
+        added_module_dependencies[module] = added_module_dependencies.get(module, []).append(dependencies)
+    
+    removed_module_dependencies: dict[str, list[GraphEdge]] = {}
+    for module in removed_modules:
+        dependencies = [edge for edge in base_graph.edges if edge.source == module]
+        removed_module_dependencies[module] = removed_module_dependencies.get(module, []).append(dependencies)
+    
+    module_dependencies = {
+        module: ModuleDependencyDifference(
+            module=module,
+            added_dependencies=tuple(added_module_dependencies[module]),
+            removed_dependencies=tuple(removed_module_dependencies[module])
+        )
+        for module in added_modules | removed_modules
+    }
+
+    return ArchitectureDifference(
+        base_revision=base_graph.revision,
+        target_revision=target_graph.revision,
+        added_modules=added_modules,
+        removed_modules=removed_modules,
+        module_dependencies=module_dependencies
+    )
 
 def resolve_commit(repo: Repo, revision: str) -> Commit:
     # Checks if the revision is a commit and returns the commit object
