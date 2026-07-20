@@ -13,11 +13,16 @@ from backend.app.git.worktree import create_worktree
 from backend.app.models.graph_metrics_models import (
     ArchitectureDifference,
     GraphArchitectureMetrics,
+    GraphCentralityDifference,
+    GraphCentralityMetrics,
     GraphDifference,
     GraphMetricsDifference,
+    LayerAmbiguity,
     LayerAssignment,
     LayerViolation,
+    MetricValueChange,
     ModuleDependencyDifference,
+    StructureDifference,
 )
 from backend.app.models.graph_models import Graph
 
@@ -104,14 +109,14 @@ def build_module_dependency_differences(
     return module_dependencies
 
 
-def compare_architecture(
+def compare_structure(
     base_graph: Graph,
     target_graph: Graph,
-) -> ArchitectureDifference:
+) -> StructureDifference:
     module_set_diff = compare_module_sets(base_graph, target_graph)
     edge_key_diff = compare_edge_keys(base_graph, target_graph)
 
-    return ArchitectureDifference(
+    return StructureDifference(
         added_modules=module_set_diff.added_modules,
         removed_modules=module_set_diff.removed_modules,
         module_dependencies=build_module_dependency_differences(edge_key_diff),
@@ -131,6 +136,10 @@ def _violation_key(violation: LayerViolation) -> tuple[str, str, str, str]:
     )
 
 
+def _ambiguity_key(ambiguity: LayerAmbiguity) -> tuple[str, tuple[str, ...]]:
+    return (ambiguity.module, ambiguity.matching_layers)
+
+
 def _architecture_metrics(
     graph: Graph,
 ) -> GraphArchitectureMetrics | None:
@@ -139,10 +148,10 @@ def _architecture_metrics(
     return graph.metrics.architecture
 
 
-def compare_metrics(
+def compare_architecture(
     base_graph: Graph,
     target_graph: Graph,
-) -> GraphMetricsDifference | None:
+) -> ArchitectureDifference | None:
     base_arch = _architecture_metrics(base_graph)
     target_arch = _architecture_metrics(target_graph)
     if base_arch is None or target_arch is None:
@@ -168,23 +177,120 @@ def compare_metrics(
     added_violation_keys = set(target_violations) - set(base_violations)
     removed_violation_keys = set(base_violations) - set(target_violations)
 
-    return GraphMetricsDifference(
+    base_unclassified = set(base_arch.unclassified_modules)
+    target_unclassified = set(target_arch.unclassified_modules)
+
+    base_empty = set(base_arch.empty_layers)
+    target_empty = set(target_arch.empty_layers)
+
+    base_ambiguous = {
+        _ambiguity_key(item): item for item in base_arch.ambiguous_assignments
+    }
+    target_ambiguous = {
+        _ambiguity_key(item): item for item in target_arch.ambiguous_assignments
+    }
+    added_ambiguous_keys = set(target_ambiguous) - set(base_ambiguous)
+    removed_ambiguous_keys = set(base_ambiguous) - set(target_ambiguous)
+
+    return ArchitectureDifference(
         added_assignments=tuple(
-            target_assignments[key]
-            for key in sorted(added_assignment_keys)
+            target_assignments[key] for key in sorted(added_assignment_keys)
         ),
         removed_assignments=tuple(
-            base_assignments[key]
-            for key in sorted(removed_assignment_keys)
+            base_assignments[key] for key in sorted(removed_assignment_keys)
         ),
         added_violations=tuple(
-            target_violations[key]
-            for key in sorted(added_violation_keys)
+            target_violations[key] for key in sorted(added_violation_keys)
         ),
         removed_violations=tuple(
-            base_violations[key]
-            for key in sorted(removed_violation_keys)
+            base_violations[key] for key in sorted(removed_violation_keys)
         ),
+        added_unclassified_modules=tuple(
+            sorted(target_unclassified - base_unclassified)
+        ),
+        removed_unclassified_modules=tuple(
+            sorted(base_unclassified - target_unclassified)
+        ),
+        added_empty_layers=tuple(sorted(target_empty - base_empty)),
+        removed_empty_layers=tuple(sorted(base_empty - target_empty)),
+        added_ambiguous_assignments=tuple(
+            target_ambiguous[key] for key in sorted(added_ambiguous_keys)
+        ),
+        removed_ambiguous_assignments=tuple(
+            base_ambiguous[key] for key in sorted(removed_ambiguous_keys)
+        ),
+    )
+
+
+def _normalize_cycle(cycle: tuple[str, ...]) -> tuple[str, ...]:
+    if not cycle:
+        return cycle
+    start = cycle.index(min(cycle))
+    return cycle[start:] + cycle[:start]
+
+
+def _centrality_changes(
+    base_values: dict[str, float],
+    target_values: dict[str, float],
+) -> tuple[MetricValueChange, ...]:
+    changes: list[MetricValueChange] = []
+    for module in sorted(set(base_values) & set(target_values)):
+        before = base_values[module]
+        after = target_values[module]
+        if before != after:
+            changes.append(
+                MetricValueChange(module=module, before=before, after=after)
+            )
+    return tuple(changes)
+
+
+def _compare_centrality(
+    base: GraphCentralityMetrics,
+    target: GraphCentralityMetrics,
+) -> GraphCentralityDifference:
+    return GraphCentralityDifference(
+        pagerank=_centrality_changes(
+            base.pagerank_centrality, target.pagerank_centrality
+        ),
+        betweenness=_centrality_changes(
+            base.betweenness_centrality, target.betweenness_centrality
+        ),
+        in_degree=_centrality_changes(
+            base.in_degree_centrality, target.in_degree_centrality
+        ),
+        out_degree=_centrality_changes(
+            base.out_degree_centrality, target.out_degree_centrality
+        ),
+    )
+
+
+def compare_metrics(
+    base_graph: Graph,
+    target_graph: Graph,
+) -> GraphMetricsDifference | None:
+    if base_graph.metrics is None or target_graph.metrics is None:
+        return None
+
+    base = base_graph.metrics
+    target = target_graph.metrics
+
+    base_isolates = set(base.isolates.isolates)
+    target_isolates = set(target.isolates.isolates)
+
+    base_cycles = {_normalize_cycle(cycle) for cycle in base.cycles.cycles}
+    target_cycles = {_normalize_cycle(cycle) for cycle in target.cycles.cycles}
+
+    base_hubs = {hub.module for hub in base.hub_modules.hub_modules}
+    target_hubs = {hub.module for hub in target.hub_modules.hub_modules}
+
+    return GraphMetricsDifference(
+        centrality=_compare_centrality(base.centrality, target.centrality),
+        added_isolates=tuple(sorted(target_isolates - base_isolates)),
+        removed_isolates=tuple(sorted(base_isolates - target_isolates)),
+        added_cycles=tuple(sorted(target_cycles - base_cycles)),
+        removed_cycles=tuple(sorted(base_cycles - target_cycles)),
+        added_hub_modules=tuple(sorted(target_hubs - base_hubs)),
+        removed_hub_modules=tuple(sorted(base_hubs - target_hubs)),
     )
 
 
@@ -198,6 +304,7 @@ def compare_graphs(
     return GraphDifference(
         base_revision=base_revision,
         target_revision=target_revision,
+        structure=compare_structure(base_graph, target_graph),
         architecture=compare_architecture(base_graph, target_graph),
         metrics=compare_metrics(base_graph, target_graph),
     )

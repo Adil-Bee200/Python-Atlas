@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from backend.app.config.models import ArchitectureLayer
 
@@ -11,7 +11,7 @@ class ModuleDependencyDifference:
 
 
 @dataclass(frozen=True)
-class ArchitectureDifference:
+class StructureDifference:
     added_modules: tuple[str, ...]
     removed_modules: tuple[str, ...]
     module_dependencies: dict[str, ModuleDependencyDifference]
@@ -45,18 +45,53 @@ class LayerViolation:
 
 
 @dataclass(frozen=True)
+class ArchitectureDifference:
+    added_assignments: tuple[LayerAssignment, ...] = ()
+    removed_assignments: tuple[LayerAssignment, ...] = ()
+    added_violations: tuple[LayerViolation, ...] = ()
+    removed_violations: tuple[LayerViolation, ...] = ()
+    added_unclassified_modules: tuple[str, ...] = ()
+    removed_unclassified_modules: tuple[str, ...] = ()
+    added_empty_layers: tuple[str, ...] = ()
+    removed_empty_layers: tuple[str, ...] = ()
+    added_ambiguous_assignments: tuple[LayerAmbiguity, ...] = ()
+    removed_ambiguous_assignments: tuple[LayerAmbiguity, ...] = ()
+
+
+@dataclass(frozen=True)
+class MetricValueChange:
+    module: str
+    before: float
+    after: float
+
+
+@dataclass(frozen=True)
+class GraphCentralityDifference:
+    pagerank: tuple[MetricValueChange, ...] = ()
+    betweenness: tuple[MetricValueChange, ...] = ()
+    in_degree: tuple[MetricValueChange, ...] = ()
+    out_degree: tuple[MetricValueChange, ...] = ()
+
+
+@dataclass(frozen=True)
 class GraphMetricsDifference:
-    added_assignments: tuple[LayerAssignment, ...]
-    removed_assignments: tuple[LayerAssignment, ...]
-    added_violations: tuple[LayerViolation, ...]
-    removed_violations: tuple[LayerViolation, ...]
+    centrality: GraphCentralityDifference = field(
+        default_factory=GraphCentralityDifference
+    )
+    added_isolates: tuple[str, ...] = ()
+    removed_isolates: tuple[str, ...] = ()
+    added_cycles: tuple[tuple[str, ...], ...] = ()
+    removed_cycles: tuple[tuple[str, ...], ...] = ()
+    added_hub_modules: tuple[str, ...] = ()
+    removed_hub_modules: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
 class GraphDifference:
     base_revision: str
     target_revision: str
-    architecture: ArchitectureDifference
+    structure: StructureDifference
+    architecture: ArchitectureDifference | None = None
     metrics: GraphMetricsDifference | None = None
 
 
