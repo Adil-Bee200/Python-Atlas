@@ -283,6 +283,17 @@ def compare_metrics(
     base_hubs = {hub.module for hub in base.hub_modules.hub_modules}
     target_hubs = {hub.module for hub in target.hub_modules.hub_modules}
 
+    base_dead = {
+        item.module: item
+        for item in (base.dead_modules.dead_modules if base.dead_modules else ())
+    }
+    target_dead = {
+        item.module: item
+        for item in (target.dead_modules.dead_modules if target.dead_modules else ())
+    }
+    added_dead_keys = set(target_dead) - set(base_dead)
+    removed_dead_keys = set(base_dead) - set(target_dead)
+
     return GraphMetricsDifference(
         centrality=_compare_centrality(base.centrality, target.centrality),
         added_isolates=tuple(sorted(target_isolates - base_isolates)),
@@ -291,6 +302,22 @@ def compare_metrics(
         removed_cycles=tuple(sorted(base_cycles - target_cycles)),
         added_hub_modules=tuple(sorted(target_hubs - base_hubs)),
         removed_hub_modules=tuple(sorted(base_hubs - target_hubs)),
+        added_dead_modules=tuple(
+            target_dead[module] for module in sorted(added_dead_keys)
+        ),
+        removed_dead_modules=tuple(
+            base_dead[module] for module in sorted(removed_dead_keys)
+        ),
+        dead_modules_percentage_before=(
+            base.dead_modules.dead_modules_percentage
+            if base.dead_modules is not None
+            else None
+        ),
+        dead_modules_percentage_after=(
+            target.dead_modules.dead_modules_percentage
+            if target.dead_modules is not None
+            else None
+        ),
     )
 
 

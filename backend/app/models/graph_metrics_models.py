@@ -74,6 +74,18 @@ class GraphCentralityDifference:
 
 
 @dataclass(frozen=True)
+class GraphDeadModules:
+    module: str
+    reason: str
+
+
+@dataclass(frozen=True)
+class GraphDeadModulesMetrics:
+    dead_modules: tuple[GraphDeadModules, ...]
+    dead_modules_percentage: float
+
+
+@dataclass(frozen=True)
 class GraphMetricsDifference:
     centrality: GraphCentralityDifference = field(
         default_factory=GraphCentralityDifference
@@ -84,6 +96,10 @@ class GraphMetricsDifference:
     removed_cycles: tuple[tuple[str, ...], ...] = ()
     added_hub_modules: tuple[str, ...] = ()
     removed_hub_modules: tuple[str, ...] = ()
+    added_dead_modules: tuple[GraphDeadModules, ...] = ()
+    removed_dead_modules: tuple[GraphDeadModules, ...] = ()
+    dead_modules_percentage_before: float | None = None
+    dead_modules_percentage_after: float | None = None
 
 
 @dataclass(frozen=True)
@@ -103,18 +119,6 @@ class GraphArchitectureMetrics:
     empty_layers: tuple[str, ...] = ()
     ambiguous_assignments: tuple[LayerAmbiguity, ...] = ()
     warnings: tuple[str, ...] = ()
-
-
-@dataclass(frozen=True)
-class GraphDeadModules:
-    module: str
-    reason: str
-
-
-@dataclass(frozen=True)
-class GraphDeadModulesMetrics:
-    dead_modules: tuple[GraphDeadModules, ...]
-    dead_modules_percentage: float
 
 
 @dataclass(frozen=True)
