@@ -19,7 +19,6 @@ from backend.app.models.graph_models import Graph
 def compare_graphs(
     base_graph: Graph,
     target_graph: Graph,
-    *,
     base_revision: str,
     target_revision: str,
 ) -> ArchitectureDifference:
