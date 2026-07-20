@@ -1,12 +1,11 @@
 from dataclasses import dataclass
 from backend.app.config.models import ArchitectureLayer
-from backend.app.models.graph_models import GraphEdge
 
 @dataclass(frozen=True)
 class ModuleDependencyDifference:
     module: str
-    added_dependencies: tuple[GraphEdge, ...]
-    removed_dependencies: tuple[GraphEdge, ...]
+    added_dependencies: tuple[str, ...]
+    removed_dependencies: tuple[str, ...]
 
 @dataclass(frozen=True)
 class ArchitectureDifference:
