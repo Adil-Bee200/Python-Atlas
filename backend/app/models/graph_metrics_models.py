@@ -2,6 +2,13 @@ from dataclasses import dataclass
 from backend.app.config.models import ArchitectureLayer
 
 @dataclass(frozen=True)
+class GraphMetricsDifference:
+    added_assignments: tuple[LayerAssignment, ...]
+    removed_assignments: tuple[LayerAssignment, ...]
+    added_violations: tuple[LayerViolation, ...]
+    removed_violations: tuple[LayerViolation, ...]
+
+@dataclass(frozen=True)
 class ModuleDependencyDifference:
     module: str
     added_dependencies: tuple[str, ...]

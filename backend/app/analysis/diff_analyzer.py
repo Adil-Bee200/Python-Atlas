@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 
 from git import Repo
@@ -16,50 +17,123 @@ from backend.app.models.graph_metrics_models import (
 from backend.app.models.graph_models import Graph
 
 
+@dataclass(frozen=True)
+class ModuleSetDifference:
+    added_modules: tuple[str, ...]
+    removed_modules: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class EdgeKeyDifference:
+    added_edge_keys: frozenset[tuple[str, str]]
+    removed_edge_keys: frozenset[tuple[str, str]]
+
+
+@dataclass(frozen=True)
+class ModuleDifferenceAnalysis:
+    module_dependencies: dict[str, ModuleDependencyDifference]
+    added_modules: tuple[str, ...]
+    removed_modules: tuple[str, ...]
+
+
+def graph_module_paths(graph: Graph) -> set[str]:
+    return {node.module_path for node in graph.nodes}
+
+
+def graph_edge_keys(graph: Graph) -> set[tuple[str, str]]:
+    return {(edge.source, edge.target) for edge in graph.edges}
+
+
+def compare_module_sets(
+    base_graph: Graph,
+    target_graph: Graph,
+) -> ModuleSetDifference:
+    base_modules = graph_module_paths(base_graph)
+    target_modules = graph_module_paths(target_graph)
+
+    return ModuleSetDifference(
+        added_modules=tuple(sorted(target_modules - base_modules)),
+        removed_modules=tuple(sorted(base_modules - target_modules)),
+    )
+
+
+def compare_edge_keys(
+    base_graph: Graph,
+    target_graph: Graph,
+) -> EdgeKeyDifference:
+    base_keys = graph_edge_keys(base_graph)
+    target_keys = graph_edge_keys(target_graph)
+
+    return EdgeKeyDifference(
+        added_edge_keys=frozenset(target_keys - base_keys),
+        removed_edge_keys=frozenset(base_keys - target_keys),
+    )
+
+
+def modules_with_dependency_changes(
+    edge_diff: EdgeKeyDifference,
+) -> tuple[str, ...]:
+    modules = {
+        source for source, _ in edge_diff.added_edge_keys
+    } | {
+        source for source, _ in edge_diff.removed_edge_keys
+    }
+    return tuple(sorted(modules))
+
+
+def build_module_dependency_differences(
+    edge_diff: EdgeKeyDifference,
+) -> dict[str, ModuleDependencyDifference]:
+    module_dependencies: dict[str, ModuleDependencyDifference] = {}
+    for module in modules_with_dependency_changes(edge_diff):
+        module_dependencies[module] = ModuleDependencyDifference(
+            module=module,
+            added_dependencies=tuple(
+                sorted(
+                    target
+                    for source, target in edge_diff.added_edge_keys
+                    if source == module
+                )
+            ),
+            removed_dependencies=tuple(
+                sorted(
+                    target
+                    for source, target in edge_diff.removed_edge_keys
+                    if source == module
+                )
+            ),
+        )
+    return module_dependencies
+
+
+def compare_modules(
+    base_graph: Graph,
+    target_graph: Graph,
+) -> ModuleDifferenceAnalysis:
+    module_set_diff = compare_module_sets(base_graph, target_graph)
+    edge_key_diff = compare_edge_keys(base_graph, target_graph)
+
+    return ModuleDifferenceAnalysis(
+        added_modules=module_set_diff.added_modules,
+        removed_modules=module_set_diff.removed_modules,
+        module_dependencies=build_module_dependency_differences(edge_key_diff),
+    )
+
+
 def compare_graphs(
     base_graph: Graph,
     target_graph: Graph,
     base_revision: str,
     target_revision: str,
 ) -> ArchitectureDifference:
-    base_modules = {node.module_path for node in base_graph.nodes}
-    target_modules = {node.module_path for node in target_graph.nodes}
-
-    added_modules = tuple(sorted(target_modules - base_modules))
-    removed_modules = tuple(sorted(base_modules - target_modules))
-
-    base_edge_keys = {(edge.source, edge.target) for edge in base_graph.edges}
-    target_edge_keys = {(edge.source, edge.target) for edge in target_graph.edges}
-
-    added_edge_keys = target_edge_keys - base_edge_keys
-    removed_edge_keys = base_edge_keys - target_edge_keys
-
-    modules_with_dep_changes = {
-        source for source, _ in added_edge_keys
-    } | {
-        source for source, _ in removed_edge_keys
-    }
-
-    module_dependencies: dict[str, ModuleDependencyDifference] = {}
-    for module in sorted(modules_with_dep_changes):
-        module_dependencies[module] = ModuleDependencyDifference(
-            module=module,
-            added_dependencies=tuple(
-                sorted(target for source, target in added_edge_keys if source == module)
-            ),
-            removed_dependencies=tuple(
-                sorted(
-                    target for source, target in removed_edge_keys if source == module
-                )
-            ),
-        )
+    module_difference_analysis = compare_modules(base_graph, target_graph)
 
     return ArchitectureDifference(
         base_revision=base_revision,
         target_revision=target_revision,
-        added_modules=added_modules,
-        removed_modules=removed_modules,
-        module_dependencies=module_dependencies,
+        added_modules=module_difference_analysis.added_modules,
+        removed_modules=module_difference_analysis.removed_modules,
+        module_dependencies=module_difference_analysis.module_dependencies,
     )
 
 
