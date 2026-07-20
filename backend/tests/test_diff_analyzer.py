@@ -8,6 +8,7 @@ from backend.app.analysis.diff_analyzer import (
     compare_graphs,
     compare_metrics,
     compare_module_sets,
+    compare_structure,
     graph_edge_keys,
     graph_module_paths,
     modules_with_dependency_changes,
@@ -19,7 +20,13 @@ from backend.app.metrics.hub_modules import analyze_hub_modules
 from backend.app.metrics.isolates import analyze_isolates
 from backend.app.models.graph_metrics_models import (
     GraphArchitectureMetrics,
+    GraphCentralityMetrics,
+    GraphCyclesMetrics,
+    GraphHubModule,
+    GraphHubModulesMetrics,
+    GraphIsolatesMetrics,
     GraphMetrics,
+    LayerAmbiguity,
     LayerAssignment,
     LayerViolation,
     ModuleDependencyDifference,
@@ -31,16 +38,28 @@ SERVICES = ArchitectureLayer(name="services", module_patterns=("app.services.*",
 MODELS = ArchitectureLayer(name="models", module_patterns=("app.models.*",))
 
 
-def _metrics_with_architecture(
+def _full_metrics(
     graph,
-    architecture: GraphArchitectureMetrics,
+    *,
+    architecture: GraphArchitectureMetrics | None = None,
+    isolates: tuple[str, ...] | None = None,
+    cycles: tuple[tuple[str, ...], ...] | None = None,
+    hub_modules: tuple[GraphHubModule, ...] = (),
 ) -> GraphMetrics:
     centrality = analyze_centrality(graph)
     return GraphMetrics(
         centrality=centrality,
-        isolates=analyze_isolates(graph),
-        cycles=analyze_cycles(graph),
-        hub_modules=analyze_hub_modules(graph, centrality),
+        isolates=GraphIsolatesMetrics(
+            isolates=isolates if isolates is not None else analyze_isolates(graph).isolates
+        ),
+        cycles=GraphCyclesMetrics(
+            cycles=cycles if cycles is not None else analyze_cycles(graph).cycles
+        ),
+        hub_modules=GraphHubModulesMetrics(
+            hub_modules=hub_modules,
+            in_degree_threshold=0.0,
+            max_out_degree=1.0,
+        ),
         architecture=architecture,
     )
 
@@ -132,11 +151,11 @@ def test_build_module_dependency_differences():
     }
 
 
-def test_compare_architecture_module_add_and_remove():
+def test_compare_structure_module_add_and_remove():
     base = _graph(("a", "b"), (("a", "b"),))
     target = _graph(("a", "c"), (("a", "c"),))
 
-    diff = compare_architecture(base, target)
+    diff = compare_structure(base, target)
 
     assert diff.added_modules == ("c",)
     assert diff.removed_modules == ("b",)
@@ -149,11 +168,11 @@ def test_compare_architecture_module_add_and_remove():
     }
 
 
-def test_compare_architecture_dependency_change_on_existing_module():
+def test_compare_structure_dependency_change_on_existing_module():
     base = _graph(("a", "b", "c"), (("a", "b"),))
     target = _graph(("a", "b", "c"), (("a", "c"),))
 
-    diff = compare_architecture(base, target)
+    diff = compare_structure(base, target)
 
     assert diff.added_modules == ()
     assert diff.removed_modules == ()
@@ -164,7 +183,7 @@ def test_compare_architecture_dependency_change_on_existing_module():
     )
 
 
-def test_compare_architecture_ignores_fan_in_fan_out_differences():
+def test_compare_structure_ignores_fan_in_fan_out_differences():
     base = _graph(("a", "b"), (("a", "b"),))
     target = replace(
         base,
@@ -174,18 +193,18 @@ def test_compare_architecture_ignores_fan_in_fan_out_differences():
         ),
     )
 
-    diff = compare_architecture(base, target)
+    diff = compare_structure(base, target)
 
     assert diff.added_modules == ()
     assert diff.removed_modules == ()
     assert diff.module_dependencies == {}
 
 
-def test_compare_architecture_added_module_with_dependencies():
+def test_compare_structure_added_module_with_dependencies():
     base = _graph(("a",), ())
     target = _graph(("a", "b", "c"), (("b", "c"), ("b", "a")))
 
-    diff = compare_architecture(base, target)
+    diff = compare_structure(base, target)
 
     assert diff.added_modules == ("b", "c")
     assert diff.removed_modules == ()
@@ -196,41 +215,44 @@ def test_compare_architecture_added_module_with_dependencies():
     )
 
 
-def test_compare_metrics_returns_none_without_architecture_metrics():
+def test_compare_architecture_returns_none_without_layer_metrics():
     base = _graph(("app.api.routes",), ())
     target = _graph(("app.api.routes",), ())
 
-    assert compare_metrics(base, target) is None
+    assert compare_architecture(base, target) is None
 
 
-def test_compare_metrics_assignment_and_violation_changes():
+def test_compare_architecture_layer_field_changes():
     base = _graph(
-        ("app.api.routes", "app.services.users", "app.models.user"),
-        (("app.api.routes", "app.services.users"),),
+        ("app.api.routes", "app.services.users", "app.models.user", "app.utils.x"),
+        (),
     )
     target = _graph(
-        ("app.api.routes", "app.services.users", "app.models.user"),
-        (("app.api.routes", "app.models.user"),),
+        ("app.api.routes", "app.services.users", "app.models.user", "app.utils.x"),
+        (),
     )
 
     base = replace(
         base,
-        metrics=_metrics_with_architecture(
+        metrics=_full_metrics(
             base,
-            GraphArchitectureMetrics(
+            architecture=GraphArchitectureMetrics(
                 assignments=(
                     LayerAssignment(layer=API, module="app.api.routes"),
                     LayerAssignment(layer=SERVICES, module="app.services.users"),
                 ),
                 violations=(),
+                unclassified_modules=("app.utils.x",),
+                empty_layers=("models",),
+                ambiguous_assignments=(),
             ),
         ),
     )
     target = replace(
         target,
-        metrics=_metrics_with_architecture(
+        metrics=_full_metrics(
             target,
-            GraphArchitectureMetrics(
+            architecture=GraphArchitectureMetrics(
                 assignments=(
                     LayerAssignment(layer=API, module="app.api.routes"),
                     LayerAssignment(layer=MODELS, module="app.models.user"),
@@ -243,11 +265,19 @@ def test_compare_metrics_assignment_and_violation_changes():
                         target_layer="models",
                     ),
                 ),
+                unclassified_modules=(),
+                empty_layers=("services",),
+                ambiguous_assignments=(
+                    LayerAmbiguity(
+                        module="app.utils.x",
+                        matching_layers=("api", "services"),
+                    ),
+                ),
             ),
         ),
     )
 
-    diff = compare_metrics(base, target)
+    diff = compare_architecture(base, target)
 
     assert diff is not None
     assert diff.added_assignments == (
@@ -264,30 +294,126 @@ def test_compare_metrics_assignment_and_violation_changes():
             target_layer="models",
         ),
     )
-    assert diff.removed_violations == ()
+    assert diff.removed_unclassified_modules == ("app.utils.x",)
+    assert diff.added_empty_layers == ("services",)
+    assert diff.removed_empty_layers == ("models",)
+    assert diff.added_ambiguous_assignments == (
+        LayerAmbiguity(module="app.utils.x", matching_layers=("api", "services")),
+    )
 
 
-def test_compare_graphs_orchestrates_architecture_and_metrics():
-    base = _graph(("app.api.routes", "app.services.users"), (("app.api.routes", "app.services.users"),))
-    target = _graph(("app.api.routes", "app.models.user"), (("app.api.routes", "app.models.user"),))
+def test_compare_metrics_returns_none_without_graph_metrics():
+    base = _graph(("a",), ())
+    target = _graph(("a",), ())
+
+    assert compare_metrics(base, target) is None
+
+
+def test_compare_metrics_isolates_cycles_hubs_and_centrality():
+    base = _graph(("a", "b", "c"), (("a", "b"), ("b", "a")))
+    target = _graph(("a", "b", "c"), (("a", "b"), ("b", "c"), ("c", "a")))
 
     base = replace(
         base,
-        metrics=_metrics_with_architecture(
+        metrics=_full_metrics(
             base,
-            GraphArchitectureMetrics(
-                assignments=(
-                    LayerAssignment(layer=API, module="app.api.routes"),
-                    LayerAssignment(layer=SERVICES, module="app.services.users"),
+            isolates=("c",),
+            cycles=(("a", "b"),),
+            hub_modules=(
+                GraphHubModule(
+                    module="a",
+                    in_degree=1,
+                    out_degree=1,
+                    pagerank=0.5,
+                    hub_score=0.4,
+                ),
+            ),
+        ),
+    )
+    # Override centrality so value changes are deterministic.
+    base = replace(
+        base,
+        metrics=replace(
+            base.metrics,
+            centrality=GraphCentralityMetrics(
+                pagerank_centrality={"a": 0.5, "b": 0.3, "c": 0.2},
+                betweenness_centrality={"a": 0.1, "b": 0.1, "c": 0.0},
+                in_degree_centrality={"a": 0.5, "b": 0.5, "c": 0.0},
+                out_degree_centrality={"a": 0.5, "b": 0.5, "c": 0.0},
+            ),
+        ),
+    )
+    target = replace(
+        target,
+        metrics=_full_metrics(
+            target,
+            isolates=(),
+            cycles=(("a", "b", "c"),),
+            hub_modules=(
+                GraphHubModule(
+                    module="b",
+                    in_degree=1,
+                    out_degree=1,
+                    pagerank=0.4,
+                    hub_score=0.3,
                 ),
             ),
         ),
     )
     target = replace(
         target,
-        metrics=_metrics_with_architecture(
+        metrics=replace(
+            target.metrics,
+            centrality=GraphCentralityMetrics(
+                pagerank_centrality={"a": 0.4, "b": 0.3, "c": 0.3},
+                betweenness_centrality={"a": 0.1, "b": 0.2, "c": 0.1},
+                in_degree_centrality={"a": 0.5, "b": 0.5, "c": 0.5},
+                out_degree_centrality={"a": 0.5, "b": 0.5, "c": 0.5},
+            ),
+        ),
+    )
+
+    diff = compare_metrics(base, target)
+
+    assert diff is not None
+    assert diff.removed_isolates == ("c",)
+    assert diff.added_isolates == ()
+    assert diff.removed_cycles == (("a", "b"),)
+    assert diff.added_cycles == (("a", "b", "c"),)
+    assert diff.added_hub_modules == ("b",)
+    assert diff.removed_hub_modules == ("a",)
+    assert any(change.module == "a" for change in diff.centrality.pagerank)
+    assert any(change.module == "b" for change in diff.centrality.betweenness)
+
+
+def test_compare_graphs_orchestrates_three_buckets():
+    base = _graph(
+        ("app.api.routes", "app.services.users"),
+        (("app.api.routes", "app.services.users"),),
+    )
+    target = _graph(
+        ("app.api.routes", "app.models.user"),
+        (("app.api.routes", "app.models.user"),),
+    )
+
+    base = replace(
+        base,
+        metrics=_full_metrics(
+            base,
+            architecture=GraphArchitectureMetrics(
+                assignments=(
+                    LayerAssignment(layer=API, module="app.api.routes"),
+                    LayerAssignment(layer=SERVICES, module="app.services.users"),
+                ),
+            ),
+            isolates=("app.services.users",),
+        ),
+    )
+    target = replace(
+        target,
+        metrics=_full_metrics(
             target,
-            GraphArchitectureMetrics(
+            architecture=GraphArchitectureMetrics(
                 assignments=(
                     LayerAssignment(layer=API, module="app.api.routes"),
                     LayerAssignment(layer=MODELS, module="app.models.user"),
@@ -301,6 +427,7 @@ def test_compare_graphs_orchestrates_architecture_and_metrics():
                     ),
                 ),
             ),
+            isolates=(),
         ),
     )
 
@@ -310,24 +437,30 @@ def test_compare_graphs_orchestrates_architecture_and_metrics():
 
     assert diff.base_revision == "base"
     assert diff.target_revision == "target"
-    assert diff.architecture.added_modules == ("app.models.user",)
-    assert diff.architecture.removed_modules == ("app.services.users",)
-    assert diff.metrics is not None
-    assert diff.metrics.added_assignments == (
+    assert diff.structure.added_modules == ("app.models.user",)
+    assert diff.structure.removed_modules == ("app.services.users",)
+    assert diff.architecture is not None
+    assert diff.architecture.added_assignments == (
         LayerAssignment(layer=MODELS, module="app.models.user"),
     )
-    assert diff.metrics.removed_assignments == (
-        LayerAssignment(layer=SERVICES, module="app.services.users"),
+    assert diff.metrics is not None
+    assert diff.metrics.removed_isolates == ("app.services.users",)
+
+
+def test_compare_graphs_architecture_none_when_layers_missing():
+    base = replace(
+        _graph(("a", "b"), (("a", "b"),)),
+        metrics=_full_metrics(_graph(("a", "b"), (("a", "b"),))),
     )
-
-
-def test_compare_graphs_metrics_none_when_architecture_missing():
-    base = _graph(("a", "b"), (("a", "b"),))
-    target = _graph(("a", "c"), (("a", "c"),))
+    target = replace(
+        _graph(("a", "c"), (("a", "c"),)),
+        metrics=_full_metrics(_graph(("a", "c"), (("a", "c"),))),
+    )
 
     diff = compare_graphs(
         base, target, base_revision="old", target_revision="new"
     )
 
-    assert diff.architecture.added_modules == ("c",)
-    assert diff.metrics is None
+    assert diff.structure.added_modules == ("c",)
+    assert diff.architecture is None
+    assert diff.metrics is not None
