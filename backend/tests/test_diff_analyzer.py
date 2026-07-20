@@ -22,6 +22,8 @@ from backend.app.models.graph_metrics_models import (
     GraphArchitectureMetrics,
     GraphCentralityMetrics,
     GraphCyclesMetrics,
+    GraphDeadModules,
+    GraphDeadModulesMetrics,
     GraphHubModule,
     GraphHubModulesMetrics,
     GraphIsolatesMetrics,
@@ -45,6 +47,7 @@ def _full_metrics(
     isolates: tuple[str, ...] | None = None,
     cycles: tuple[tuple[str, ...], ...] | None = None,
     hub_modules: tuple[GraphHubModule, ...] = (),
+    dead_modules: GraphDeadModulesMetrics | None = None,
 ) -> GraphMetrics:
     centrality = analyze_centrality(graph)
     return GraphMetrics(
@@ -60,6 +63,7 @@ def _full_metrics(
             in_degree_threshold=0.0,
             max_out_degree=1.0,
         ),
+        dead_modules=dead_modules,
         architecture=architecture,
     )
 
@@ -384,6 +388,76 @@ def test_compare_metrics_isolates_cycles_hubs_and_centrality():
     assert diff.removed_hub_modules == ("a",)
     assert any(change.module == "a" for change in diff.centrality.pagerank)
     assert any(change.module == "b" for change in diff.centrality.betweenness)
+
+
+def test_compare_metrics_dead_modules():
+    base = _graph(("a", "b", "c"), (("a", "b"),))
+    target = _graph(("a", "b", "c"), (("a", "b"), ("a", "c")))
+
+    base = replace(
+        base,
+        metrics=_full_metrics(
+            base,
+            dead_modules=GraphDeadModulesMetrics(
+                dead_modules=(
+                    GraphDeadModules("b", "Unreached by entry points"),
+                    GraphDeadModules("c", "Unreached by entry points"),
+                ),
+                dead_modules_percentage=2 / 3,
+            ),
+        ),
+    )
+    target = replace(
+        target,
+        metrics=_full_metrics(
+            target,
+            dead_modules=GraphDeadModulesMetrics(
+                dead_modules=(
+                    GraphDeadModules("b", "Unreached by entry points"),
+                ),
+                dead_modules_percentage=1 / 3,
+            ),
+        ),
+    )
+
+    diff = compare_metrics(base, target)
+
+    assert diff is not None
+    assert diff.added_dead_modules == ()
+    assert diff.removed_dead_modules == (
+        GraphDeadModules("c", "Unreached by entry points"),
+    )
+    assert diff.dead_modules_percentage_before == 2 / 3
+    assert diff.dead_modules_percentage_after == 1 / 3
+
+
+def test_compare_metrics_dead_modules_none_treated_as_empty():
+    base = _graph(("a", "orphan"), ())
+    target = _graph(("a", "orphan"), ())
+
+    base = replace(base, metrics=_full_metrics(base, dead_modules=None))
+    target = replace(
+        target,
+        metrics=_full_metrics(
+            target,
+            dead_modules=GraphDeadModulesMetrics(
+                dead_modules=(
+                    GraphDeadModules("orphan", "Unreached by entry points"),
+                ),
+                dead_modules_percentage=0.5,
+            ),
+        ),
+    )
+
+    diff = compare_metrics(base, target)
+
+    assert diff is not None
+    assert diff.added_dead_modules == (
+        GraphDeadModules("orphan", "Unreached by entry points"),
+    )
+    assert diff.removed_dead_modules == ()
+    assert diff.dead_modules_percentage_before is None
+    assert diff.dead_modules_percentage_after == 0.5
 
 
 def test_compare_graphs_orchestrates_three_buckets():
