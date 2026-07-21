@@ -1,6 +1,7 @@
 import { MarkerType } from "@xyflow/react";
 import type {
   DependencyFlowEdge,
+  ModuleNodeData,
   ModuleFlowNode,
 } from "../types/architecture";
 
@@ -11,70 +12,87 @@ import type {
  * ELK will take over positioning in a later step.
  */
 
+const moduleData = (
+  module: string,
+  details: Partial<ModuleNodeData> = {},
+): ModuleNodeData => ({
+  module,
+  filePath: module.replaceAll(".", "/") + ".py",
+  metrics: { inDegree: 0, outDegree: 0, pageRank: 0, betweenness: 0 },
+  statuses: [],
+  ...details,
+});
+
 export const sampleNodes: ModuleFlowNode[] = [
   {
     id: "app.main",
     type: "module",
     position: { x: 0, y: 180 },
-    data: { module: "app.main", status: "Entry point" },
+    data: moduleData("app.main", { status: "Entry point" }),
   },
   {
     id: "app.api.checkout",
     type: "module",
     position: { x: 260, y: 60 },
-    data: { module: "app.api.checkout", layer: "api" },
+    data: moduleData("app.api.checkout", { layer: "api" }),
   },
   {
     id: "app.api.orders",
     type: "module",
     position: { x: 260, y: 200 },
-    data: { module: "app.api.orders", layer: "api" },
+    data: moduleData("app.api.orders", { layer: "api" }),
   },
   {
     id: "app.api.users",
     type: "module",
     position: { x: 260, y: 340 },
-    data: { module: "app.api.users", layer: "api" },
+    data: moduleData("app.api.users", { layer: "api" }),
   },
   {
     id: "app.services.payment",
     type: "module",
     position: { x: 540, y: 120 },
-    data: {
-      module: "app.services.payment",
+    data: moduleData("app.services.payment", {
       layer: "service",
+      statuses: ["hub"],
       status: "Hub · 14 dependents",
-    },
+    }),
   },
   {
     id: "app.services.accounts",
     type: "module",
     position: { x: 540, y: 300 },
-    data: { module: "app.services.accounts", layer: "service" },
+    data: moduleData("app.services.accounts", { layer: "service" }),
   },
   {
     id: "app.repository.payment",
     type: "module",
     position: { x: 840, y: 60 },
-    data: { module: "app.repository.payment", layer: "repository" },
+    data: moduleData("app.repository.payment", { layer: "repository" }),
   },
   {
     id: "app.repository.users",
     type: "module",
     position: { x: 840, y: 300 },
-    data: { module: "app.repository.users", layer: "repository" },
+    data: moduleData("app.repository.users", { layer: "repository" }),
   },
   {
     id: "app.core.config",
     type: "module",
     position: { x: 840, y: 180 },
-    data: { module: "app.core.config", status: "Hub · 9 dependents" },
+    data: moduleData("app.core.config", {
+      statuses: ["hub"],
+      status: "Hub · 9 dependents",
+    }),
   },
   {
     id: "app.utils.legacy",
     type: "module",
     position: { x: 540, y: 440 },
-    data: { module: "app.utils.legacy", status: "Dead module" },
+    data: moduleData("app.utils.legacy", {
+      statuses: ["dead"],
+      status: "Dead module",
+    }),
   },
 ];
 
@@ -92,6 +110,7 @@ const dependencyEdge = (
     height: 16,
     color: "#6e6e6e",
   },
+  data: { rawImports: [], importCount: 1, statuses: [] },
 });
 
 export const sampleEdges: DependencyFlowEdge[] = [
