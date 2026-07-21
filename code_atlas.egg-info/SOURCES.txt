@@ -2,6 +2,7 @@ README.md
 pyproject.toml
 backend/__init__.py
 backend/app/__init__.py
+backend/app/api.py
 backend/app/main.py
 backend/app/analysis/__init__.py
 backend/app/analysis/analyzer.py
@@ -13,6 +14,8 @@ backend/app/config/loader.py
 backend/app/config/models.py
 backend/app/export/__init__.py
 backend/app/export/graph_json.py
+backend/app/git/__init__.py
+backend/app/git/worktree.py
 backend/app/graph/__init__.py
 backend/app/graph/graph_builder.py
 backend/app/metrics/architecture_metrics.py

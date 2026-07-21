@@ -14,16 +14,20 @@ dependencies = [
     "PyYAML>=6.0",
     "scipy>=1.18",
     "GitPython>=3.1",
+    "fastapi>=0.116,<0.117",
+    "uvicorn[standard]>=0.35,<0.36",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=9.0",
     "Pygments>=2.20",
+    "httpx>=0.28",
 ]
 
 [project.scripts]
 atlas = "backend.app.main:main"
+atlas-api = "backend.app.api:run"
 
 [tool.setuptools.packages.find]
 where = ["."]

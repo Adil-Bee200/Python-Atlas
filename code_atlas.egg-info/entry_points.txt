@@ -1,2 +1,3 @@
 [console_scripts]
 atlas = backend.app.main:main
+atlas-api = backend.app.api:run
