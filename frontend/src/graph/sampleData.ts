@@ -86,7 +86,12 @@ const dependencyEdge = (
   id: `${source}->${target}`,
   source,
   target,
-  markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 },
+  markerEnd: {
+    type: MarkerType.ArrowClosed,
+    width: 16,
+    height: 16,
+    color: "#6e6e6e",
+  },
 });
 
 export const sampleEdges: DependencyFlowEdge[] = [

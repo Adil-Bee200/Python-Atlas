@@ -12,7 +12,7 @@ import { sampleEdges, sampleNodes } from "../../graph/sampleData";
 const nodeTypes = { module: ModuleNode };
 
 const defaultEdgeOptions = {
-  style: { stroke: "#94a3b8", strokeWidth: 1.5 },
+  style: { stroke: "#6e6e6e", strokeWidth: 1.5 },
 };
 
 /**
@@ -31,20 +31,24 @@ export function ArchitectureGraph() {
       onEdgesChange={onEdgesChange}
       nodeTypes={nodeTypes}
       defaultEdgeOptions={defaultEdgeOptions}
+      colorMode="dark"
       fitView
       fitViewOptions={{ padding: 0.2 }}
       minZoom={0.2}
       maxZoom={2}
       proOptions={{ hideAttribution: true }}
+      className="bg-atlas-bg"
     >
-      <Background gap={24} size={1.5} color="#e2e8f0" />
+      <Background gap={24} size={1.5} color="#333333" />
       <Controls position="bottom-left" />
       <MiniMap
         position="bottom-right"
         pannable
         zoomable
-        nodeColor="#cbd5e1"
-        maskColor="rgba(241, 245, 249, 0.7)"
+        nodeColor="#3c3c3c"
+        nodeStrokeColor="#505050"
+        maskColor="rgba(30, 30, 30, 0.75)"
+        bgColor="#252526"
       />
     </ReactFlow>
   );

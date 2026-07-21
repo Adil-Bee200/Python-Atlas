@@ -1,9 +1,27 @@
 @import "tailwindcss";
 @import "@xyflow/react/dist/style.css";
 
+/*
+ * Code Atlas dark palette (VS Code Dark+ / GitHub Dark territory).
+ * Use these tokens everywhere instead of raw hex values.
+ */
+@theme {
+  --color-atlas-bg: #1e1e1e; /* canvas / app background */
+  --color-atlas-sidebar: #252526; /* sidebar, top bar */
+  --color-atlas-panel: #2d2d30; /* panels, badges, inputs */
+  --color-atlas-node: #3c3c3c; /* node fill */
+  --color-atlas-border: #505050; /* default borders */
+  --color-atlas-text: #e5e5e5; /* primary text */
+  --color-atlas-muted: #9d9d9d; /* secondary text */
+  --color-atlas-accent: #4f8cff; /* selection / interactive */
+  --color-atlas-warn: #d7a65f; /* muted amber for statuses */
+}
+
 html,
 body,
 #root {
   height: 100%;
   margin: 0;
+  background-color: var(--color-atlas-bg);
+  color: var(--color-atlas-text);
 }

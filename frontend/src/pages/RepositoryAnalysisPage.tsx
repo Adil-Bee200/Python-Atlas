@@ -6,10 +6,10 @@ import { ArchitectureGraph } from "../components/graph/ArchitectureGraph";
  */
 export function RepositoryAnalysisPage() {
   return (
-    <div className="flex h-full flex-col bg-slate-50">
-      <header className="flex h-14 shrink-0 items-center gap-3 border-b border-slate-200 bg-white px-4">
-        <h1 className="text-sm font-semibold text-slate-800">Code Atlas</h1>
-        <span className="text-xs text-slate-400">
+    <div className="flex h-full flex-col bg-atlas-bg">
+      <header className="flex h-14 shrink-0 items-center gap-3 border-b border-atlas-panel bg-atlas-sidebar px-4">
+        <h1 className="text-sm font-semibold text-atlas-text">Code Atlas</h1>
+        <span className="text-xs text-atlas-muted">
           static sample graph · arrows read “imports”
         </span>
       </header>
