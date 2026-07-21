@@ -31,6 +31,8 @@ export function ArchitectureGraph() {
       onEdgesChange={onEdgesChange}
       nodeTypes={nodeTypes}
       defaultEdgeOptions={defaultEdgeOptions}
+      nodesConnectable={false}
+      edgesReconnectable={false}
       colorMode="dark"
       fitView
       fitViewOptions={{ padding: 0.2 }}
