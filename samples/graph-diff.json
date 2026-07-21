@@ -1,0 +1,1058 @@
+{
+    "base_revision": "ad81adbac25916e15ce694af320ff907e4a7f538",
+    "target_revision": "HEAD",
+    "structure": {
+        "added_modules": [
+            "backend.app.api",
+            "backend.app.api.deps",
+            "backend.app.api.router",
+            "backend.app.api.routes",
+            "backend.app.api.routes.alerts",
+            "backend.app.api.routes.articles",
+            "backend.app.api.routes.pipeline",
+            "backend.app.api.routes.sentiment",
+            "backend.app.api.routes.stats",
+            "backend.app.api.routes.tracked_assets",
+            "backend.app.api.sentiment_daily",
+            "backend.app.core.limiter",
+            "backend.app.core.timezone_util",
+            "backend.app.main",
+            "backend.app.schemas.api",
+            "backend.app.seeds.loader",
+            "backend.app.services.filtering.article_filter",
+            "backend.app.services.filtering.article_scorer",
+            "backend.app.services.llm.cost",
+            "backend.app.services.llm.llm_errors",
+            "backend.app.services.stats",
+            "backend.app.services.stats.project_stats_service",
+            "backend.scripts.preview_pipeline",
+            "backend.scripts.print_project_stats",
+            "backend.scripts.reaggregate_sentiment",
+            "backend.scripts.seed_assets",
+            "backend.tests.test_api",
+            "backend.tests.test_article_ingestion",
+            "backend.tests.test_article_scorer",
+            "backend.tests.test_config",
+            "backend.tests.test_discord_notifier",
+            "backend.tests.test_llm_budget",
+            "backend.tests.test_llm_cost",
+            "backend.tests.test_llm_errors",
+            "backend.tests.test_pipeline_llm_failures",
+            "backend.tests.test_pipeline_preview",
+            "backend.tests.test_project_stats",
+            "backend.tests.test_rolling_sentiment",
+            "backend.tests.test_seed_assets",
+            "backend.tests.test_sentiment_service",
+            "backend.tests.test_timezone_display",
+            "backend.tests.test_timezone_util"
+        ],
+        "removed_modules": [],
+        "module_dependencies": {
+            "backend.app.api.deps": {
+                "module": "backend.app.api.deps",
+                "added_dependencies": [
+                    "backend.app.core.database"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.app.api.router": {
+                "module": "backend.app.api.router",
+                "added_dependencies": [
+                    "backend.app.api.routes",
+                    "backend.app.api.routes.alerts",
+                    "backend.app.api.routes.articles",
+                    "backend.app.api.routes.pipeline",
+                    "backend.app.api.routes.sentiment",
+                    "backend.app.api.routes.stats",
+                    "backend.app.api.routes.tracked_assets"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.app.api.routes.alerts": {
+                "module": "backend.app.api.routes.alerts",
+                "added_dependencies": [
+                    "backend.app.api.deps",
+                    "backend.app.core.limiter",
+                    "backend.app.models.alert",
+                    "backend.app.models.tracked_assets",
+                    "backend.app.schemas.api"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.app.api.routes.articles": {
+                "module": "backend.app.api.routes.articles",
+                "added_dependencies": [
+                    "backend.app.api.deps",
+                    "backend.app.core.limiter",
+                    "backend.app.core.timezone_util",
+                    "backend.app.models.article",
+                    "backend.app.models.tracked_assets",
+                    "backend.app.schemas.api"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.app.api.routes.pipeline": {
+                "module": "backend.app.api.routes.pipeline",
+                "added_dependencies": [
+                    "backend.app.api.deps",
+                    "backend.app.core.config",
+                    "backend.app.core.limiter",
+                    "backend.app.models.alert",
+                    "backend.app.models.processing_runs",
+                    "backend.app.schemas.api",
+                    "backend.app.services.stats.project_stats_service"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.app.api.routes.sentiment": {
+                "module": "backend.app.api.routes.sentiment",
+                "added_dependencies": [
+                    "backend.app.api.deps",
+                    "backend.app.api.sentiment_daily",
+                    "backend.app.core.config",
+                    "backend.app.core.limiter",
+                    "backend.app.core.timezone_util",
+                    "backend.app.models.sentiment",
+                    "backend.app.models.tracked_assets",
+                    "backend.app.schemas.api",
+                    "backend.app.services.sentiment.sentiment_service"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.app.api.routes.stats": {
+                "module": "backend.app.api.routes.stats",
+                "added_dependencies": [
+                    "backend.app.api.deps",
+                    "backend.app.core.limiter",
+                    "backend.app.schemas.api",
+                    "backend.app.services.stats.project_stats_service"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.app.api.routes.tracked_assets": {
+                "module": "backend.app.api.routes.tracked_assets",
+                "added_dependencies": [
+                    "backend.app.api.deps",
+                    "backend.app.core.limiter",
+                    "backend.app.models.tracked_assets",
+                    "backend.app.schemas.api"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.app.api.sentiment_daily": {
+                "module": "backend.app.api.sentiment_daily",
+                "added_dependencies": [
+                    "backend.app.core.config",
+                    "backend.app.core.timezone_util",
+                    "backend.app.models.sentiment",
+                    "backend.app.schemas.api"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.app.core": {
+                "module": "backend.app.core",
+                "added_dependencies": [
+                    "backend.app.core.timezone_util"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.app.core.timezone_util": {
+                "module": "backend.app.core.timezone_util",
+                "added_dependencies": [
+                    "backend.app.core.config"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.app.main": {
+                "module": "backend.app.main",
+                "added_dependencies": [
+                    "backend.app.api.router",
+                    "backend.app.core.config",
+                    "backend.app.core.database",
+                    "backend.app.core.limiter"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.app.seeds.loader": {
+                "module": "backend.app.seeds.loader",
+                "added_dependencies": [
+                    "backend.app.services.tracked_assets.tracked_assets_service"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.app.services.alerts.alert_service": {
+                "module": "backend.app.services.alerts.alert_service",
+                "added_dependencies": [
+                    "backend.app.core.timezone_util"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.app.services.filtering": {
+                "module": "backend.app.services.filtering",
+                "added_dependencies": [
+                    "backend.app.services.filtering.article_scorer"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.app.services.filtering.article_filter": {
+                "module": "backend.app.services.filtering.article_filter",
+                "added_dependencies": [
+                    "backend.app.core.config"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.app.services.filtering.article_scorer": {
+                "module": "backend.app.services.filtering.article_scorer",
+                "added_dependencies": [
+                    "backend.app.core.config",
+                    "backend.app.models.tracked_assets",
+                    "backend.app.services.filtering.article_filter",
+                    "backend.app.services.filtering.keyword_filter"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.app.services.filtering.keyword_filter": {
+                "module": "backend.app.services.filtering.keyword_filter",
+                "added_dependencies": [
+                    "backend.app.core.config"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.app.services.ingestion.article_ingestion_service": {
+                "module": "backend.app.services.ingestion.article_ingestion_service",
+                "added_dependencies": [
+                    "backend.app.core.timezone_util"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.app.services.llm.ai_service": {
+                "module": "backend.app.services.llm.ai_service",
+                "added_dependencies": [
+                    "backend.app.services.llm.cost",
+                    "backend.app.services.llm.llm_errors"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.app.services.llm.cost": {
+                "module": "backend.app.services.llm.cost",
+                "added_dependencies": [
+                    "backend.app.core.config"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.app.services.pipeline.llm_content": {
+                "module": "backend.app.services.pipeline.llm_content",
+                "added_dependencies": [
+                    "backend.app.core.timezone_util"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.app.services.pipeline.pipeline_service": {
+                "module": "backend.app.services.pipeline.pipeline_service",
+                "added_dependencies": [
+                    "backend.app.core.timezone_util",
+                    "backend.app.services.filtering.article_scorer",
+                    "backend.app.services.llm.llm_errors"
+                ],
+                "removed_dependencies": [
+                    "backend.app.services.filtering.keyword_filter"
+                ]
+            },
+            "backend.app.services.sentiment.sentiment_service": {
+                "module": "backend.app.services.sentiment.sentiment_service",
+                "added_dependencies": [
+                    "backend.app.core.config",
+                    "backend.app.core.timezone_util"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.app.services.stats.project_stats_service": {
+                "module": "backend.app.services.stats.project_stats_service",
+                "added_dependencies": [
+                    "backend.app.models.alert",
+                    "backend.app.models.article",
+                    "backend.app.models.processing_runs",
+                    "backend.app.models.tracked_assets"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.app.services.tracked_assets.tracked_assets_service": {
+                "module": "backend.app.services.tracked_assets.tracked_assets_service",
+                "added_dependencies": [
+                    "backend.app.core.timezone_util"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.scripts.preview_pipeline": {
+                "module": "backend.scripts.preview_pipeline",
+                "added_dependencies": [
+                    "backend.app.core.database",
+                    "backend.app.services.pipeline.pipeline_service"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.scripts.print_project_stats": {
+                "module": "backend.scripts.print_project_stats",
+                "added_dependencies": [
+                    "backend.app.core.database",
+                    "backend.app.services.stats.project_stats_service"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.scripts.reaggregate_sentiment": {
+                "module": "backend.scripts.reaggregate_sentiment",
+                "added_dependencies": [
+                    "backend.app.core.database",
+                    "backend.app.core.timezone_util",
+                    "backend.app.services.sentiment.sentiment_service",
+                    "backend.app.services.tracked_assets.tracked_assets_service"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.scripts.seed_assets": {
+                "module": "backend.scripts.seed_assets",
+                "added_dependencies": [
+                    "backend.app.core.database",
+                    "backend.app.seeds.loader",
+                    "backend.app.services.tracked_assets.tracked_assets_service"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.tests.test_api": {
+                "module": "backend.tests.test_api",
+                "added_dependencies": [
+                    "backend.app.core.database",
+                    "backend.app.models.alert",
+                    "backend.app.models.article",
+                    "backend.app.models.processing_runs",
+                    "backend.app.models.sentiment",
+                    "backend.app.models.tracked_assets"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.tests.test_article_ingestion": {
+                "module": "backend.tests.test_article_ingestion",
+                "added_dependencies": [
+                    "backend.app.services.ingestion.article_ingestion_service"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.tests.test_article_scorer": {
+                "module": "backend.tests.test_article_scorer",
+                "added_dependencies": [
+                    "backend.app.models.tracked_assets",
+                    "backend.app.services.filtering.article_filter",
+                    "backend.app.services.filtering.article_scorer",
+                    "backend.app.services.filtering.keyword_filter"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.tests.test_config": {
+                "module": "backend.tests.test_config",
+                "added_dependencies": [
+                    "backend.app.core.config"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.tests.test_discord_notifier": {
+                "module": "backend.tests.test_discord_notifier",
+                "added_dependencies": [
+                    "backend.app.models.alert",
+                    "backend.app.services.alerts.discord_notifier"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.tests.test_llm_budget": {
+                "module": "backend.tests.test_llm_budget",
+                "added_dependencies": [
+                    "backend.app.services.pipeline.llm_content"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.tests.test_llm_cost": {
+                "module": "backend.tests.test_llm_cost",
+                "added_dependencies": [
+                    "backend.app.core.config",
+                    "backend.app.services.llm.cost"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.tests.test_llm_errors": {
+                "module": "backend.tests.test_llm_errors",
+                "added_dependencies": [
+                    "backend.app.services.llm.llm_errors"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.tests.test_pipeline_llm_failures": {
+                "module": "backend.tests.test_pipeline_llm_failures",
+                "added_dependencies": [
+                    "backend.app.models.tracked_assets",
+                    "backend.app.schemas.schemas_v1",
+                    "backend.app.services.llm.ai_service",
+                    "backend.app.services.pipeline.pipeline_service"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.tests.test_pipeline_preview": {
+                "module": "backend.tests.test_pipeline_preview",
+                "added_dependencies": [
+                    "backend.app.models.tracked_assets",
+                    "backend.app.services.pipeline.pipeline_service"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.tests.test_project_stats": {
+                "module": "backend.tests.test_project_stats",
+                "added_dependencies": [
+                    "backend.app.core.database",
+                    "backend.app.models.alert",
+                    "backend.app.models.article",
+                    "backend.app.models.processing_runs",
+                    "backend.app.models.tracked_assets",
+                    "backend.app.services.stats.project_stats_service"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.tests.test_rolling_sentiment": {
+                "module": "backend.tests.test_rolling_sentiment",
+                "added_dependencies": [
+                    "backend.app.models.sentiment",
+                    "backend.app.services.sentiment.sentiment_service"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.tests.test_seed_assets": {
+                "module": "backend.tests.test_seed_assets",
+                "added_dependencies": [
+                    "backend.app.models.tracked_assets",
+                    "backend.app.seeds.loader"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.tests.test_sentiment_service": {
+                "module": "backend.tests.test_sentiment_service",
+                "added_dependencies": [
+                    "backend.app.models.article",
+                    "backend.app.services.sentiment.sentiment_service"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.tests.test_timezone_display": {
+                "module": "backend.tests.test_timezone_display",
+                "added_dependencies": [
+                    "backend.app.core.timezone_util"
+                ],
+                "removed_dependencies": []
+            },
+            "backend.tests.test_timezone_util": {
+                "module": "backend.tests.test_timezone_util",
+                "added_dependencies": [
+                    "backend.app.core.timezone_util"
+                ],
+                "removed_dependencies": []
+            }
+        }
+    },
+    "architecture": null,
+    "metrics": {
+        "centrality": {
+            "pagerank": [
+                {
+                    "module": "backend.app.core",
+                    "before": 0.009511506632623588,
+                    "after": 0.004819688411042503
+                },
+                {
+                    "module": "backend.app.core.config",
+                    "before": 0.2205657066196558,
+                    "after": 0.21308782391330547
+                },
+                {
+                    "module": "backend.app.core.database",
+                    "before": 0.15462114805833674,
+                    "after": 0.12063792722197764
+                },
+                {
+                    "module": "backend.app.models",
+                    "before": 0.009511506632623588,
+                    "after": 0.004819688411042503
+                },
+                {
+                    "module": "backend.app.models.alert",
+                    "before": 0.019879462605273707,
+                    "after": 0.017610549379028163
+                },
+                {
+                    "module": "backend.app.models.article",
+                    "before": 0.03943998697330518,
+                    "after": 0.025009080648120553
+                },
+                {
+                    "module": "backend.app.models.processing_runs",
+                    "before": 0.012967854321742224,
+                    "after": 0.010812521028588703
+                },
+                {
+                    "module": "backend.app.models.sentiment",
+                    "before": 0.017571718683598383,
+                    "after": 0.012938776427501126
+                },
+                {
+                    "module": "backend.app.models.tracked_assets",
+                    "before": 0.06139669952015172,
+                    "after": 0.04017612958677031
+                },
+                {
+                    "module": "backend.app.schemas.schemas_v1",
+                    "before": 0.025394241663549897,
+                    "after": 0.012520808228918425
+                },
+                {
+                    "module": "backend.app.services",
+                    "before": 0.009511506632623588,
+                    "after": 0.004819688411042503
+                },
+                {
+                    "module": "backend.app.services.alerts",
+                    "before": 0.009511506632623588,
+                    "after": 0.004819688411042503
+                },
+                {
+                    "module": "backend.app.services.alerts.alert_service",
+                    "before": 0.01943574465978147,
+                    "after": 0.010055873247483629
+                },
+                {
+                    "module": "backend.app.services.alerts.discord_notifier",
+                    "before": 0.01281571148117805,
+                    "after": 0.008292698821463664
+                },
+                {
+                    "module": "backend.app.services.filtering",
+                    "before": 0.009511506632623588,
+                    "after": 0.004819688411042503
+                },
+                {
+                    "module": "backend.app.services.filtering.keyword_filter",
+                    "before": 0.023478176121056,
+                    "after": 0.01185988442884772
+                },
+                {
+                    "module": "backend.app.services.ingestion",
+                    "before": 0.009511506632623588,
+                    "after": 0.004819688411042503
+                },
+                {
+                    "module": "backend.app.services.ingestion.article_ingestion_service",
+                    "before": 0.022703414974161108,
+                    "after": 0.015808346372181457
+                },
+                {
+                    "module": "backend.app.services.llm",
+                    "before": 0.009511506632623588,
+                    "after": 0.004819688411042503
+                },
+                {
+                    "module": "backend.app.services.llm.ai_service",
+                    "before": 0.027520607582330527,
+                    "after": 0.015176735952231004
+                },
+                {
+                    "module": "backend.app.services.pipeline",
+                    "before": 0.009511506632623588,
+                    "after": 0.004819688411042503
+                },
+                {
+                    "module": "backend.app.services.pipeline.llm_content",
+                    "before": 0.027233616768158723,
+                    "after": 0.016732820524410077
+                },
+                {
+                    "module": "backend.app.services.pipeline.pipeline_service",
+                    "before": 0.02163880101644717,
+                    "after": 0.016085586361486725
+                },
+                {
+                    "module": "backend.app.services.sentiment",
+                    "before": 0.009511506632623588,
+                    "after": 0.004819688411042503
+                },
+                {
+                    "module": "backend.app.services.sentiment.sentiment_service",
+                    "before": 0.022739949508335928,
+                    "after": 0.0171236170016035
+                },
+                {
+                    "module": "backend.app.services.tracked_assets",
+                    "before": 0.009511506632623588,
+                    "after": 0.004819688411042503
+                },
+                {
+                    "module": "backend.app.services.tracked_assets.tracked_assets_service",
+                    "before": 0.01943574465978147,
+                    "after": 0.01944449506983662
+                },
+                {
+                    "module": "backend.archive.app.api",
+                    "before": 0.009511506632623588,
+                    "after": 0.004819688411042503
+                },
+                {
+                    "module": "backend.archive.app.core.celery_app",
+                    "before": 0.012779176947003226,
+                    "after": 0.0064754713719424335
+                },
+                {
+                    "module": "backend.archive.app.main",
+                    "before": 0.009511506632623588,
+                    "after": 0.004819688411042503
+                },
+                {
+                    "module": "backend.archive.app.services.ingestion.queue_articles",
+                    "before": 0.009511506632623588,
+                    "after": 0.004819688411042503
+                },
+                {
+                    "module": "backend.archive.app.services.portfolio.portfolio_service",
+                    "before": 0.01759636955517264,
+                    "after": 0.0089163785748404
+                },
+                {
+                    "module": "backend.archive.app.services.portfolio_active",
+                    "before": 0.009511506632623588,
+                    "after": 0.004819688411042503
+                },
+                {
+                    "module": "backend.archive.app.services.portfolio_active.portfolio_service",
+                    "before": 0.009511506632623588,
+                    "after": 0.004819688411042503
+                },
+                {
+                    "module": "backend.archive.app.workers.celery_worker",
+                    "before": 0.01153272236326085,
+                    "after": 0.005843860951991978
+                },
+                {
+                    "module": "backend.scripts",
+                    "before": 0.009511506632623588,
+                    "after": 0.004819688411042503
+                },
+                {
+                    "module": "backend.scripts.run_pipeline",
+                    "before": 0.009511506632623588,
+                    "after": 0.004819688411042503
+                },
+                {
+                    "module": "backend.tests",
+                    "before": 0.009511506632623588,
+                    "after": 0.004819688411042503
+                },
+                {
+                    "module": "backend.tests.conftest",
+                    "before": 0.009511506632623588,
+                    "after": 0.004819688411042503
+                },
+                {
+                    "module": "backend.tests.test_keyword_filter",
+                    "before": 0.009511506632623588,
+                    "after": 0.004819688411042503
+                },
+                {
+                    "module": "backend.tests.test_llm_content",
+                    "before": 0.009511506632623588,
+                    "after": 0.004819688411042503
+                },
+                {
+                    "module": "backend.tests.test_llm_service",
+                    "before": 0.009511506632623588,
+                    "after": 0.004819688411042503
+                }
+            ],
+            "betweenness": [
+                {
+                    "module": "backend.app.core.database",
+                    "before": 0.008231707317073171,
+                    "after": 0.0025467724556763644
+                },
+                {
+                    "module": "backend.app.models.alert",
+                    "before": 0.0014634146341463415,
+                    "after": 0.0007395435400137135
+                },
+                {
+                    "module": "backend.app.models.article",
+                    "before": 0.005121951219512195,
+                    "after": 0.0015623469487706927
+                },
+                {
+                    "module": "backend.app.models.processing_runs",
+                    "before": 0.0006504065040650406,
+                    "after": 0.0002889607209325105
+                },
+                {
+                    "module": "backend.app.models.sentiment",
+                    "before": 0.001056910569105691,
+                    "after": 0.0005093544911352728
+                },
+                {
+                    "module": "backend.app.models.tracked_assets",
+                    "before": 0.007764227642276422,
+                    "after": 0.0025222842589871686
+                },
+                {
+                    "module": "backend.app.services.alerts.alert_service",
+                    "before": 0.00899390243902439,
+                    "after": 0.003232441962973847
+                },
+                {
+                    "module": "backend.app.services.alerts.discord_notifier",
+                    "before": 0.0,
+                    "after": 0.00014692918013517486
+                },
+                {
+                    "module": "backend.app.services.filtering.keyword_filter",
+                    "before": 0.0022865853658536584,
+                    "after": 0.0004162993437163288
+                },
+                {
+                    "module": "backend.app.services.ingestion.article_ingestion_service",
+                    "before": 0.003455284552845528,
+                    "after": 0.0018611029483788816
+                },
+                {
+                    "module": "backend.app.services.llm.ai_service",
+                    "before": 0.00975609756097561,
+                    "after": 0.005069056714663533
+                },
+                {
+                    "module": "backend.app.services.pipeline.llm_content",
+                    "before": 0.006707317073170732,
+                    "after": 0.002938583602703497
+                },
+                {
+                    "module": "backend.app.services.pipeline.pipeline_service",
+                    "before": 0.018597560975609755,
+                    "after": 0.01373787834263885
+                },
+                {
+                    "module": "backend.app.services.sentiment.sentiment_service",
+                    "before": 0.007774390243902439,
+                    "after": 0.004236458027230875
+                },
+                {
+                    "module": "backend.app.services.tracked_assets.tracked_assets_service",
+                    "before": 0.0022865853658536584,
+                    "after": 0.0018366147516896856
+                },
+                {
+                    "module": "backend.archive.app.services.portfolio.portfolio_service",
+                    "before": 0.0006097560975609756,
+                    "after": 0.00014692918013517486
+                },
+                {
+                    "module": "backend.archive.app.workers.celery_worker",
+                    "before": 0.0012195121951219512,
+                    "after": 0.0004407875404055246
+                }
+            ],
+            "in_degree": [
+                {
+                    "module": "backend.app.core.config",
+                    "before": 0.3170731707317073,
+                    "after": 0.30120481927710846
+                },
+                {
+                    "module": "backend.app.core.database",
+                    "before": 0.21951219512195122,
+                    "after": 0.20481927710843376
+                },
+                {
+                    "module": "backend.app.models.alert",
+                    "before": 0.07317073170731708,
+                    "after": 0.10843373493975904
+                },
+                {
+                    "module": "backend.app.models.article",
+                    "before": 0.14634146341463417,
+                    "after": 0.13253012048192772
+                },
+                {
+                    "module": "backend.app.models.processing_runs",
+                    "before": 0.04878048780487805,
+                    "after": 0.07228915662650603
+                },
+                {
+                    "module": "backend.app.models.sentiment",
+                    "before": 0.04878048780487805,
+                    "after": 0.07228915662650603
+                },
+                {
+                    "module": "backend.app.models.tracked_assets",
+                    "before": 0.14634146341463417,
+                    "after": 0.21686746987951808
+                },
+                {
+                    "module": "backend.app.schemas.schemas_v1",
+                    "before": 0.07317073170731708,
+                    "after": 0.04819277108433735
+                },
+                {
+                    "module": "backend.app.services.alerts.alert_service",
+                    "before": 0.04878048780487805,
+                    "after": 0.024096385542168676
+                },
+                {
+                    "module": "backend.app.services.alerts.discord_notifier",
+                    "before": 0.024390243902439025,
+                    "after": 0.024096385542168676
+                },
+                {
+                    "module": "backend.app.services.filtering.keyword_filter",
+                    "before": 0.07317073170731708,
+                    "after": 0.04819277108433735
+                },
+                {
+                    "module": "backend.app.services.ingestion.article_ingestion_service",
+                    "before": 0.07317073170731708,
+                    "after": 0.04819277108433735
+                },
+                {
+                    "module": "backend.app.services.llm.ai_service",
+                    "before": 0.0975609756097561,
+                    "after": 0.060240963855421686
+                },
+                {
+                    "module": "backend.app.services.pipeline.llm_content",
+                    "before": 0.07317073170731708,
+                    "after": 0.04819277108433735
+                },
+                {
+                    "module": "backend.app.services.pipeline.pipeline_service",
+                    "before": 0.04878048780487805,
+                    "after": 0.060240963855421686
+                },
+                {
+                    "module": "backend.app.services.sentiment.sentiment_service",
+                    "before": 0.07317073170731708,
+                    "after": 0.08433734939759037
+                },
+                {
+                    "module": "backend.app.services.tracked_assets.tracked_assets_service",
+                    "before": 0.04878048780487805,
+                    "after": 0.060240963855421686
+                },
+                {
+                    "module": "backend.archive.app.core.celery_app",
+                    "before": 0.024390243902439025,
+                    "after": 0.012048192771084338
+                },
+                {
+                    "module": "backend.archive.app.services.portfolio.portfolio_service",
+                    "before": 0.024390243902439025,
+                    "after": 0.012048192771084338
+                },
+                {
+                    "module": "backend.archive.app.workers.celery_worker",
+                    "before": 0.024390243902439025,
+                    "after": 0.012048192771084338
+                }
+            ],
+            "out_degree": [
+                {
+                    "module": "backend.app.core",
+                    "before": 0.04878048780487805,
+                    "after": 0.03614457831325302
+                },
+                {
+                    "module": "backend.app.core.database",
+                    "before": 0.024390243902439025,
+                    "after": 0.012048192771084338
+                },
+                {
+                    "module": "backend.app.models",
+                    "before": 0.12195121951219512,
+                    "after": 0.060240963855421686
+                },
+                {
+                    "module": "backend.app.models.alert",
+                    "before": 0.024390243902439025,
+                    "after": 0.012048192771084338
+                },
+                {
+                    "module": "backend.app.models.article",
+                    "before": 0.024390243902439025,
+                    "after": 0.012048192771084338
+                },
+                {
+                    "module": "backend.app.models.processing_runs",
+                    "before": 0.024390243902439025,
+                    "after": 0.012048192771084338
+                },
+                {
+                    "module": "backend.app.models.sentiment",
+                    "before": 0.024390243902439025,
+                    "after": 0.012048192771084338
+                },
+                {
+                    "module": "backend.app.models.tracked_assets",
+                    "before": 0.024390243902439025,
+                    "after": 0.012048192771084338
+                },
+                {
+                    "module": "backend.app.services.alerts",
+                    "before": 0.024390243902439025,
+                    "after": 0.012048192771084338
+                },
+                {
+                    "module": "backend.app.services.alerts.alert_service",
+                    "before": 0.12195121951219512,
+                    "after": 0.07228915662650603
+                },
+                {
+                    "module": "backend.app.services.alerts.discord_notifier",
+                    "before": 0.04878048780487805,
+                    "after": 0.024096385542168676
+                },
+                {
+                    "module": "backend.app.services.filtering",
+                    "before": 0.024390243902439025,
+                    "after": 0.024096385542168676
+                },
+                {
+                    "module": "backend.app.services.filtering.keyword_filter",
+                    "before": 0.024390243902439025,
+                    "after": 0.024096385542168676
+                },
+                {
+                    "module": "backend.app.services.ingestion",
+                    "before": 0.024390243902439025,
+                    "after": 0.012048192771084338
+                },
+                {
+                    "module": "backend.app.services.ingestion.article_ingestion_service",
+                    "before": 0.07317073170731708,
+                    "after": 0.04819277108433735
+                },
+                {
+                    "module": "backend.app.services.llm",
+                    "before": 0.04878048780487805,
+                    "after": 0.024096385542168676
+                },
+                {
+                    "module": "backend.app.services.llm.ai_service",
+                    "before": 0.07317073170731708,
+                    "after": 0.060240963855421686
+                },
+                {
+                    "module": "backend.app.services.pipeline",
+                    "before": 0.024390243902439025,
+                    "after": 0.012048192771084338
+                },
+                {
+                    "module": "backend.app.services.pipeline.llm_content",
+                    "before": 0.04878048780487805,
+                    "after": 0.03614457831325302
+                },
+                {
+                    "module": "backend.app.services.pipeline.pipeline_service",
+                    "before": 0.24390243902439024,
+                    "after": 0.14457831325301207
+                },
+                {
+                    "module": "backend.app.services.sentiment",
+                    "before": 0.024390243902439025,
+                    "after": 0.012048192771084338
+                },
+                {
+                    "module": "backend.app.services.sentiment.sentiment_service",
+                    "before": 0.07317073170731708,
+                    "after": 0.060240963855421686
+                },
+                {
+                    "module": "backend.app.services.tracked_assets",
+                    "before": 0.024390243902439025,
+                    "after": 0.012048192771084338
+                },
+                {
+                    "module": "backend.app.services.tracked_assets.tracked_assets_service",
+                    "before": 0.024390243902439025,
+                    "after": 0.024096385542168676
+                },
+                {
+                    "module": "backend.archive.app.core.celery_app",
+                    "before": 0.024390243902439025,
+                    "after": 0.012048192771084338
+                },
+                {
+                    "module": "backend.archive.app.main",
+                    "before": 0.024390243902439025,
+                    "after": 0.012048192771084338
+                },
+                {
+                    "module": "backend.archive.app.services.ingestion.queue_articles",
+                    "before": 0.0975609756097561,
+                    "after": 0.04819277108433735
+                },
+                {
+                    "module": "backend.archive.app.services.portfolio.portfolio_service",
+                    "before": 0.024390243902439025,
+                    "after": 0.012048192771084338
+                },
+                {
+                    "module": "backend.archive.app.services.portfolio_active",
+                    "before": 0.024390243902439025,
+                    "after": 0.012048192771084338
+                },
+                {
+                    "module": "backend.archive.app.workers.celery_worker",
+                    "before": 0.07317073170731708,
+                    "after": 0.03614457831325302
+                },
+                {
+                    "module": "backend.scripts.run_pipeline",
+                    "before": 0.04878048780487805,
+                    "after": 0.024096385542168676
+                },
+                {
+                    "module": "backend.tests.conftest",
+                    "before": 0.024390243902439025,
+                    "after": 0.012048192771084338
+                },
+                {
+                    "module": "backend.tests.test_keyword_filter",
+                    "before": 0.04878048780487805,
+                    "after": 0.024096385542168676
+                },
+                {
+                    "module": "backend.tests.test_llm_content",
+                    "before": 0.024390243902439025,
+                    "after": 0.012048192771084338
+                },
+                {
+                    "module": "backend.tests.test_llm_service",
+                    "before": 0.04878048780487805,
+                    "after": 0.024096385542168676
+                }
+            ]
+        },
+        "added_isolates": [
+            "backend.app.api",
+            "backend.app.services.stats"
+        ],
+        "removed_isolates": [],
+        "added_cycles": [],
+        "removed_cycles": [],
+        "added_hub_modules": [
+            "backend.app.core.limiter",
+            "backend.app.core.timezone_util",
+            "backend.app.models.alert",
+            "backend.app.schemas.api"
+        ],
+        "removed_hub_modules": [],
+        "added_dead_modules": [],
+        "removed_dead_modules": [],
+        "dead_modules_percentage_before": null,
+        "dead_modules_percentage_after": null
+    }
+}

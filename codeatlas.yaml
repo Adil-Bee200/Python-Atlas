@@ -16,22 +16,26 @@ architecture:
   layers:
     api:
       patterns:
-        - app.api.*
+        - backend.app.api
+        - backend.app.api.*
       may_depend_on:
         - services
 
     services:
       patterns:
-        - app.services.*
+        - backend.app.services
+        - backend.app.services.*
       may_depend_on:
         - repositories
 
     repositories:
       patterns:
-        - app.repositories.*
+        - backend.app.repositories
+        - backend.app.repositories.*
       may_depend_on:
         - models
 
     models:
       patterns:
-        - app.models.*
+        - backend.app.models
+        - backend.app.models.*
