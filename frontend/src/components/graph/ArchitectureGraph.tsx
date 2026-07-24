@@ -1,13 +1,18 @@
+import { useEffect, useState } from "react";
 import {
   Background,
   Controls,
   MiniMap,
   ReactFlow,
+  type ReactFlowInstance,
   useEdgesState,
   useNodesState,
 } from "@xyflow/react";
 import { ModuleNode } from "./ModuleNode";
-import { sampleEdges, sampleNodes } from "../../graph/sampleData";
+import type {
+  DependencyFlowEdge,
+  ModuleFlowNode,
+} from "../../types/architecture";
 
 const nodeTypes = { module: ModuleNode };
 
@@ -19,9 +24,30 @@ const defaultEdgeOptions = {
  * Main dependency graph canvas. Pan, zoom, node dragging, selection,
  * minimap and fit view. Data is hardcoded for step 1.
  */
-export function ArchitectureGraph() {
-  const [nodes, , onNodesChange] = useNodesState(sampleNodes);
-  const [edges, , onEdgesChange] = useEdgesState(sampleEdges);
+interface ArchitectureGraphProps {
+  initialNodes: ModuleFlowNode[];
+  initialEdges: DependencyFlowEdge[];
+}
+
+export function ArchitectureGraph({
+  initialNodes,
+  initialEdges,
+}: ArchitectureGraphProps) {
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [instance, setInstance] =
+    useState<ReactFlowInstance<ModuleFlowNode, DependencyFlowEdge> | null>(null);
+
+  useEffect(() => {
+    setNodes(initialNodes);
+    setEdges(initialEdges);
+
+    if (initialNodes.length > 0) {
+      requestAnimationFrame(() => {
+        void instance?.fitView({ padding: 0.2 });
+      });
+    }
+  }, [initialEdges, initialNodes, instance, setEdges, setNodes]);
 
   return (
     <ReactFlow
@@ -33,6 +59,7 @@ export function ArchitectureGraph() {
       defaultEdgeOptions={defaultEdgeOptions}
       nodesConnectable={false}
       edgesReconnectable={false}
+      onInit={setInstance}
       colorMode="dark"
       fitView
       fitViewOptions={{ padding: 0.2 }}
