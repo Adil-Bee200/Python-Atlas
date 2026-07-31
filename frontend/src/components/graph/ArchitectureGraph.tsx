@@ -22,7 +22,7 @@ const defaultEdgeOptions = {
 
 /**
  * Main dependency graph canvas. Pan, zoom, node dragging, selection,
- * minimap and fit view. Data is hardcoded for step 1.
+ * minimap and fit view. Positioning is owned by layout.ts (ELK).
  */
 interface ArchitectureGraphProps {
   initialNodes: ModuleFlowNode[];

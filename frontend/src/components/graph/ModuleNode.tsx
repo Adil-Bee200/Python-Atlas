@@ -8,7 +8,7 @@ import type { ModuleFlowNode } from "../../types/architecture";
 export function ModuleNode({ data, selected }: NodeProps<ModuleFlowNode>) {
   return (
     <div
-      className={`rounded-md border bg-atlas-node px-3 py-2 shadow-sm transition-colors ${
+      className={`box-border flex h-full w-full flex-col justify-center rounded-md border bg-atlas-node px-3 py-2 shadow-sm transition-colors ${
         selected
           ? "border-atlas-accent"
           : "border-atlas-border hover:border-atlas-muted"
@@ -18,7 +18,7 @@ export function ModuleNode({ data, selected }: NodeProps<ModuleFlowNode>) {
           imports leave from the right. */}
       <Handle type="target" position={Position.Left} className="!bg-atlas-border" />
 
-      <div className="font-mono text-xs font-semibold text-atlas-text">
+      <div className="truncate font-mono text-xs font-semibold text-atlas-text">
         {data.module}
       </div>
 
@@ -31,7 +31,7 @@ export function ModuleNode({ data, selected }: NodeProps<ModuleFlowNode>) {
       )}
 
       {data.status && (
-        <div className="mt-1 text-[11px] text-atlas-warn">{data.status}</div>
+        <div className="mt-1 truncate text-[11px] text-atlas-warn">{data.status}</div>
       )}
 
       <Handle type="source" position={Position.Right} className="!bg-atlas-border" />

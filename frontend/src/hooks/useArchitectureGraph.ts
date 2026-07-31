@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { analyzeRepository } from "../api/analyze";
 import { toReactFlowGraph } from "../graph/adapters";
+import { layoutGraph } from "../graph/layout";
 import type {
   DependencyFlowEdge,
   ModuleFlowNode,
@@ -38,8 +39,10 @@ export function useArchitectureGraph(): ArchitectureGraphState {
           controller.signal,
         );
         const flowGraph = toReactFlowGraph(graph);
-        setNodes(flowGraph.nodes as ModuleFlowNode[]);
-        setEdges(flowGraph.edges);
+        const layouted = await layoutGraph(flowGraph.nodes, flowGraph.edges);
+        if (controller.signal.aborted) return;
+        setNodes(layouted.nodes as ModuleFlowNode[]);
+        setEdges(layouted.edges);
       } catch (requestError) {
         if (controller.signal.aborted) return;
         setError(
